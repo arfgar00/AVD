@@ -26,5 +26,9 @@ _**Each section is broken down into:**_
   
 (b) 'Additional notes for reference (ie either from lecture or from discussion)' - any notes raised by other groups / by lectures that we should keep in mind  
   
-(c) 'Calculations made with reference to this section' - these are the calculations we have made with reference to the section    
+(c) 'Calculations made with reference to this section' - these are the calculations we have made with reference to the section  
+
+Finalised reports etc. will be written up in a shared LaTeX file tbc
+
+21/10/2024
 
