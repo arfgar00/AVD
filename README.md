@@ -24,7 +24,9 @@ _**The 'sections' include:**_
 
 _**Each section is broken down into:**_  
 
-(a) 'The lecture notes' - very basic but very useful as references on things we need to think about for each section
+(a) 'The lecture notes' - very basic but very useful as references on things we need to think about for each section  
+  
 (b) 'Additional notes for reference (ie either from lecture or from discussion)' - any notes raised by other groups / by lectures that we should keep in mind  
+  
 (c) 'Calculations made with reference to this section' - these are the calculations we have made with reference to the section    
 
