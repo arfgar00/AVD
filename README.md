@@ -4,7 +4,7 @@ As the project is multi-disciplinary, most of the wasted time will be because of
   
 In order to minimise this wasted time, the plan is (subject to change) we have a single matlab script called 'main.mlx' in which all of our main calculations are made in this script.  
 
-To enable people to work separately as well, it is best recommended we all write functions that we then call in the 'main.mlx' file, please remember to add any custom functions into the main script  
+To enable people to work separately as well, it is best recommended for any custom calculations we want to make, that we write functions that we can then call in the 'main.mlx' file; please remember to add any custom functions into the main script  
   
 This main.mlx file is broken up into 'sections' from Week II and beyond.  
   
