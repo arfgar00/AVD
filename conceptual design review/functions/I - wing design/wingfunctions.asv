@@ -55,13 +55,11 @@ for k = 1:length(csvFiles)
     C_L_fit = linspace(x_min, x_max, 1000); % Generate 1000 points within the range
     C_D_fit = fnval(spline_fit_CD, C_L_fit);  % Evaluate the spline at these points
     
-    % Step 4: Create a single figure for both plots
-    figure; % Create a new figure
-    % Plot C_L vs. C_D on the first subplot
-    subplot(2, 1, 1); % 2 rows, 1 column, first subplot
+    % Step 4: Plot the original data and the fitted spline curve for C_L vs. C_D
+    figure;
     plot(C_L, C_D, 'ro', 'DisplayName', 'All Data');  % Original data points
     hold on;
-    plot(C_L_filtered, C_D_filtered, 'bo', 'DisplayName', 'Filtered Data');  % Filtered data points
+    plot(C_L_filtered, C_D_filtered, 'bo', 'DisplayName', 'Splined Data');  % Filtered data points
     plot(C_L_fit, C_D_fit, 'r-', 'LineWidth', 2, 'DisplayName', 'Fitted Spline'); % Fitted spline
     
     % Step 5: Calculate the y value at x_point for the spline
@@ -73,13 +71,14 @@ for k = 1:length(csvFiles)
         continue; % Skip to the next iteration if out of range
     end
     
-    % Additional plot formatting for C_D
+    % Additional plot formatting
     xlabel('C_L (Lift Coefficient)');
     ylabel('C_D (Drag Coefficient)');
     xlim([0, x_max]);
     ylim([0, 0.05]);
     legend('show');
     title(sprintf('Spline fitting for %s (C_L in [%.2f, %.2f])', variableName, x_min, x_max));
+    hold off;
     
     % Step 6: Differentiate the spline to get the gradient (1st derivative)
     spline_derivative_CD = fnder(spline_fit_CD);  % Differentiate the spline
@@ -95,32 +94,34 @@ for k = 1:length(csvFiles)
     spline_fit_alpha = csaps(C_L_filtered, alpha_filtered, smoothing_param);  % Fit the smoothing spline for alpha vs C_L
     
     % Step 9: Evaluate the spline for the alpha fit
-    C_L_fit_alpha = linspace(min(C_L_filtered), max(C_L_filtered), 1000); % Generate 1000 points within the range
-    alpha_fit_C_L = fnval(spline_fit_alpha, C_L_fit_alpha);  % Evaluate the spline at these points
+    C_L_fit = linspace(min(C_L_filtered), max(C_L_filtered), 1000); % Generate 1000 points within the range
+    alpha_fit_C_L = fnval(spline_fit_alpha, C_L_fit);  % Evaluate the spline at these points
     
-    % Step 10: Plot alpha vs C_L on the second subplot
-    subplot(2, 1, 2); % 2 rows, 1 column, second subplot
+    % Step 10: Plot the alpha vs C_L
+    figure;
     plot(alpha, C_L, 'ro', 'DisplayName', 'All Data');  % Original data points for alpha vs C_L
     hold on;
-    plot(alpha_filtered, C_L_filtered, 'bo', 'DisplayName', 'Filtered Data');  % Filtered data points
-    plot(alpha_fit_C_L, C_L_fit_alpha, 'r-', 'LineWidth', 2, 'DisplayName', 'Fitted Spline (C_L vs Alpha)'); % Fitted spline for C_L vs alpha
+    plot(alpha_filtered, C_L_filtered, 'bo', 'DisplayName', 'Splined Data');  % Filtered data points
+    plot(alpha_fit_C_L,C_L_fit, 'r-', 'LineWidth', 2, 'DisplayName', 'Fitted Spline (C_L vs Alpha)'); % Fitted spline for C_L vs alpha
     
     % Step 11: Specify the point C_L = 0.7815
     alpha_at_CL_target = fnval(spline_fit_alpha, C_L_target); % Get the corresponding alpha value
-    plot(alpha_at_CL_target, C_L_target, 'g*', 'MarkerSize', 8, 'DisplayName', sprintf('Point at C_L = %.4f', C_L_target)); % Plot the point
+    plot(alpha_at_CL_target,C_L_target,'g*', 'MarkerSize', 8, 'DisplayName', sprintf('Point at C_L = %.4f', C_L_target)); % Plot the point
     
     % Update the results structure with the corresponding alpha value
     results(end).alpha = alpha_at_CL_target; % Store alpha in the results
+    %fprintf('For C_L = %.4f, Alpha = %.4f for %s\n', C_L_target, alpha_at_CL_target, variableName);
     
-    % Additional plot formatting for alpha vs C_L
+    % Additional plot formatting
     xlabel('Angle of Attack (alpha)');
     ylabel('C_L (Lift Coefficient)');
-    xlim([-10, 10]);
-    ylim([-2, 2]);
-    legend('show', 'Location', 'SouthEast');
+    xlim([min(alpha), max(alpha)]);
+    ylim([min(C_L), max(C_L)]);
+    xlim([0, 10]);
+    ylim([0, 0.]);
+    legend('show');
     title(sprintf('Spline fitting for %s (Alpha vs C_L)', variableName));
-    
-    hold off; % Release the hold on the plot
+    hold off;
 end
 
 % Sort the results based on the L/D values
