@@ -14,5 +14,5 @@ function CDWnum = CDWfun(myWing,Cl,M,t_c)
         y = myWing.stripy(i);
         CdWArray = CdW(M,myWing.Lambdax_c(0.5,y),t_c,Cl(y));
     end
-    CDWnum = sum(CdWArray.*myWing.Sc./myWing.Sref);
+    CDWnum = sum(CdWArray.*myWing.Sc./myWing.SREF);
 end

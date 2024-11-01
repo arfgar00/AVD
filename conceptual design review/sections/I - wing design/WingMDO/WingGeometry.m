@@ -3,27 +3,35 @@ classdef WingGeometry
       cr          % Root chord length
       ck          % Kink chord length
       ct          % Tip chord length
-      b           % Wingspan
+      s           % semi-wingspan
       yk          % Spanwise location of the kink
       Lambdain50  % Inboard sweep angle at 50% chord
       Lambdaout50 % Outboard sweep angle at 50% chord
-      Sref        % Reference area
+      SREF        % SREF of two wings
       N         % Strip theory: number of strips in inner section
       Sc          % Area of each strip
       stripy      % Mid point y coordinate of each strip, size = 1x(Nin + Nout)
       AR          % Aspect ratio
       Sin         % Area of inner section
       Sout        % Area of outer section
-      dY     % dy of each strip
+      MAC         % Mean aerodynamic chord length
+   end
+   properties (Access = private)
+        b           % Legacy semi-Wingspan symbol
+        Sref        % Reference area on one side
+        dY     % dy of each strip
    end
    
    methods
         % Method to calculate the reference area and aspect ratio
         function obj = calcSref(obj)
+             obj.b = obj.s;
              obj.Sref = (obj.cr + obj.ck) * (obj.yk) / 2 + (obj.ct + obj.ck) * (obj.b - obj.yk) / 2;
+             obj.SREF = obj.Sref*2;
              obj.AR = obj.b^2 / obj.Sref;
              obj.Sin = (obj.cr + obj.ck)*obj.yk/2;
              obj.Sout = (obj.ck + obj.ct)*(obj.b - obj.yk)/2;
+             obj.MAC = obj.Sref/(obj.s);
         end
         % Get sweep angle at coordinate (x_c,y)
         function Lambda = Lambdax_c(obj,x_c,y)

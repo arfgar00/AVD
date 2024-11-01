@@ -1,9 +1,10 @@
-classdef WingGeometry
+classdef WingGeometry2
    properties
       cr          % Root chord length
       ck          % Kink chord length
       ct          % Tip chord length
-      s           % semi-wingspan
+      s           % semi wingspan
+      b           % wingspan
       yk          % Spanwise location of the kink
       Lambdain50  % Inboard sweep angle at 50% chord
       Lambdaout50 % Outboard sweep angle at 50% chord
@@ -15,20 +16,16 @@ classdef WingGeometry
       Sin         % Area of inner section
       Sout        % Area of outer section
       dY     % dy of each strip
-      MAC         % 
-   end
-   properties (Access = private)
-        b           % Legacy semi-Wingspan symbol
    end
    
    methods
         % Method to calculate the reference area and aspect ratio
         function obj = calcSref(obj)
-             obj.b = obj.s;
-             obj.Sref = (obj.cr + obj.ck) * (obj.yk) / 2 + (obj.ct + obj.ck) * (obj.b - obj.yk) / 2;
-             obj.AR = obj.b^2 / obj.Sref;
+             obj.s = 0.5*obj.b;
+             obj.Sref = (obj.cr + obj.ck) * (obj.yk) / 2 + (obj.ct + obj.ck) * (obj.s - obj.yk) / 2;
+             obj.AR = obj.s^2 / obj.Sref;
              obj.Sin = (obj.cr + obj.ck)*obj.yk/2;
-             obj.Sout = (obj.ck + obj.ct)*(obj.b - obj.yk)/2;
+             obj.Sout = (obj.ck + obj.ct)*(obj.s - obj.yk)/2;
         end
         % Get sweep angle at coordinate (x_c,y)
         function Lambda = Lambdax_c(obj,x_c,y)
@@ -37,8 +34,8 @@ classdef WingGeometry
                 x2 = 0.5*obj.cr + dy*tan(obj.Lambdain50) - (0.5 - x_c)*obj.ck;
                 x1 = x_c*obj.cr;
                 Lambda = atan((x2 - x1)/dy);
-            elseif y > obj.yk && y <= obj.b
-                dy = obj.b - obj.yk;
+            elseif y > obj.yk && y <= obj.s
+                dy = obj.s - obj.yk;
                 x2 = 0.5*obj.ck + dy*tan(obj.Lambdaout50) - (0.5 - x_c)*obj.ct;
                 x1 = x_c*obj.ck;
                 Lambda = atan((x2 - x1)/dy);
@@ -56,41 +53,68 @@ classdef WingGeometry
             Lambdaout1 = obj.Lambdax_c(1,y);
             if y <= obj.yk
                 c = obj.cr + y*(tan(Lambdain1) - tan(Lambdain0));
-            elseif y > obj.yk && y <= obj.b
+            elseif y > obj.yk && y <= obj.s
                 c = obj.ck + (y-obj.yk)*(tan(Lambdaout1) - tan(Lambdaout0));
             end
         end
         % Plot Wing, with x_cm shown
         function plotWing(obj)
-                %plot edges
-                plot([0 obj.cr], [0 0],"b")
-                hold on
+            %plot edges
+            plot([0 obj.cr], [0 0],"s")
+            hold on
 
-                xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
-                xk1 = obj.cr+obj.yk*tan(obj.Lambdax_c(1,0));
+            xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
+            xk1 = obj.cr+obj.yk*tan(obj.Lambdax_c(1,0));
 
-                xt0 = xk0+(obj.b - obj.yk)*tan(obj.Lambdax_c(0,obj.b));
-                xt1 = xk1+(obj.b - obj.yk)*tan(obj.Lambdax_c(1,obj.b));
+            xt0 = xk0+(obj.s - obj.yk)*tan(obj.Lambdax_c(0,obj.s));
+            xt1 = xk1+(obj.s - obj.yk)*tan(obj.Lambdax_c(1,obj.s));
 
-                plot([0 xk0], [0 obj.yk],"b")
-                hold on
-                plot([obj.cr xk1], [0 obj.yk],"b")
-                hold on
-                plot([xk0  xk1], [obj.yk obj.yk],"b")
-                hold on
-                
-                plot([xk0 xt0], [obj.yk obj.b],"b")
-                hold on
-                plot([xk1 xt1], [obj.yk obj.b],"b")
-                hold on
-                plot([xt0 xt1], [obj.b obj.b],"b")
+            plot([0 xk0], [0 obj.yk],"s")
+            hold on
+            plot([obj.cr xk1], [0 obj.yk],"s")
+            hold on
+            plot([xk0  xk1], [obj.yk obj.yk],"s")
+            hold on
+            
+            plot([xk0 xt0], [obj.yk obj.s],"s")
+            hold on
+            plot([xk1 xt1], [obj.yk obj.s],"s")
+            hold on
+            plot([xt0 xt1], [obj.s obj.s],"s")
 
-                %plot mid-line sweep angle
-                xk5 = 0.5*obj.cr + obj.yk*tan(obj.Lambdax_c(0.5,0));
-                xt5 = xk5+(obj.b - obj.yk)*tan(obj.Lambdax_c(0.5,obj.b));
-                plot([0.5*obj.cr xk5], [0 obj.yk],"--b")
-                hold on
-                plot([xk5 xt5], [obj.yk obj.b],"--b")
+            %plot mid-line sweep angle
+            xk5 = 0.5*obj.cr + obj.yk*tan(obj.Lambdax_c(0.5,0));
+            xt5 = xk5+(obj.s - obj.yk)*tan(obj.Lambdax_c(0.5,obj.s));
+            plot([0.5*obj.cr xk5], [0 obj.yk],"--s")
+            hold on
+            plot([xk5 xt5], [obj.yk obj.s],"--s")
+
+            %plot the other half
+            xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
+            xk1 = obj.cr+obj.yk*tan(obj.Lambdax_c(1,0));
+
+            xt0 = xk0+(obj.s - obj.yk)*tan(obj.Lambdax_c(0,obj.s));
+            xt1 = xk1+(obj.s - obj.yk)*tan(obj.Lambdax_c(1,obj.s));
+
+            plot([0 xk0], [0 -obj.yk],"s")
+            hold on
+            plot([obj.cr xk1], [0 -obj.yk],"s")
+            hold on
+            plot([xk0  xk1], [-obj.yk -obj.yk],"s")
+            hold on
+            
+            plot([xk0 xt0], [-obj.yk -obj.s],"s")
+            hold on
+            plot([xk1 xt1], [-obj.yk -obj.s],"s")
+            hold on
+            plot([xt0 xt1], [obj.s -obj.s],"s")
+
+            %plot mid-line sweep angle
+            xk5 = 0.5*obj.cr + -obj.yk*tan(obj.Lambdax_c(0.5,0));
+            xt5 = xk5+(obj.s - -obj.yk)*tan(obj.Lambdax_c(0.5,obj.s));
+            plot([0.5*obj.cr xk5], [0 -obj.yk],"--s")
+            hold on
+            plot([xk5 xt5], [-obj.yk -obj.s],"--s")
         end
         % Create strips on the wing
         function obj =  createStrips(obj)
@@ -98,7 +122,7 @@ classdef WingGeometry
                 strip_length = x / N;
                 midpoints = (strip_length / 2) : strip_length : (x - strip_length / 2);
             end
-            obj.stripy = splitIntoStrips(obj.b,obj.N);
+            obj.stripy = splitIntoStrips(obj.s,obj.N);
             obj.dY = mean(diff(obj.stripy))/2;
         end
         % Given y, find coordinate of x on leading edge
@@ -106,8 +130,8 @@ classdef WingGeometry
             xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
             if y <= obj.yk
                 x = y*tan(obj.Lambdax_c(0,0));
-            elseif y > obj.yk && y <= obj.b
-                x = xk0 + (y - obj.yk)*tan(obj.Lambdax_c(0,obj.b));
+            elseif y > obj.yk && y <= obj.s
+                x = xk0 + (y - obj.yk)*tan(obj.Lambdax_c(0,obj.s));
             end
         end
         % Plot strips on the wing
