@@ -5,9 +5,9 @@ b = 64.8;            % Span of the wing in meters
 N = 101;              % Number of spanwise sections (must be odd for Simpson's rule)
 y = linspace(-b/2, b/2, N);  % Spanwise positions from -b/2 to b/2
 root_chord_inner = 13.14; % Root chord length in meters
-chord_at_break = 11.32;    % Chord length at the break point in meters
-tip_chord_outer = 3.37;   % Tip chord length in meters
-break_point = 0.7;        % Position of break point as a fraction of half-span
+chord_at_break = 5.32;    % Chord length at the break point in meters
+tip_chord_outer = 2.37;   % Tip chord length in meters
+break_point = 0.2;        % Position of break point as a fraction of half-span
 sweep_angle = 30;         % Sweep angle in degrees
 
 % Convert sweep angle from degrees to radians for calculations
@@ -46,7 +46,7 @@ alpha = deg2rad(12.81);   % Angle of attack in radians
 V_inf = 244;          % Freestream velocity in m/s (typical cruise speed)
 rho = 1.225;          % Air density in kg/m^3
 epsilon = 1e-13;       % Convergence criteria
-D = 1e-4;             % Damping factor
+D = 1e-2;             % Damping factor
 a0 = 6.105;             % Lift curve slope for Boeing 777 airfoil in per radian (approx)
 
 % Step 3: Initial guess for elliptical circulation distribution
@@ -58,6 +58,10 @@ for i = 1:N
         Gamma_old(i) = 0; % Set to zero outside the span
     end
 end
+
+figure 
+
+plot(y,Gamma_old)
 
 % Step 4 to 8: Iterative convergence loop
 converged = false;
@@ -198,8 +202,8 @@ title('Double-Tapered Wing Shape of Boeing 777 with Sweep', 'FontSize', 14, 'Fon
 % Add grid, symmetrical aspect ratio, and axis limits
 grid on;
 axis equal;
-ylim([-40, 40]);
-xlim([-40,40]);
+xlim([max(), b/2]);
+ylim([min(y), max(y)]);
 line([0 0], ylim, 'Color', 'k', 'LineStyle', '--', 'LineWidth', 1.5); 
 
 % Plot markers for leading and trailing edges for reference
@@ -207,7 +211,7 @@ plot(y_c, x_leading_edge, 'r--', 'LineWidth', 1.5);  % Leading edge
 plot(y_c, x_trailing_edge, 'g--', 'LineWidth', 1.5); % Trailing edge
 
 % Add a legend for clarification
-legend('Wing Shape', 'Centre Line','Leading Edge', 'Trailing Edge', 'Location', 'Best');
+legend('Wing Shape', 'Leading Edge', 'Trailing Edge', 'Location', 'Best');
 
 % Release hold
 hold off;
