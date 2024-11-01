@@ -8,19 +8,14 @@ classdef WingGeometry
       Lambdain50  % Inboard sweep angle at 50% chord
       Lambdaout50 % Outboard sweep angle at 50% chord
       Sref        % Reference area
-      Nin         % Strip theory: number of strips in inner section
-      Nout        % Strip theory: number of strips in outer section
+      N         % Strip theory: number of strips in inner section
       Sc          % Area of each strip
       stripy      % Mid point y coordinate of each strip, size = 1x(Nin + Nout)
       AR          % Aspect ratio
       Sin         % Area of inner section
       Sout        % Area of outer section
-      dyArray     % dy of each strip
+      dY     % dy of each strip
    end
-   properties (Access = private)
-      dyin        % Half width of a strip in inner section
-      dyout       % Half width of a strip in outer section
-    end
    
    methods
         % Method to calculate the reference area and aspect ratio
@@ -98,19 +93,8 @@ classdef WingGeometry
                 strip_length = x / N;
                 midpoints = (strip_length / 2) : strip_length : (x - strip_length / 2);
             end
-            yin = splitIntoStrips(obj.yk,obj.Nin);
-            yout = splitIntoStrips(obj.b - obj.yk,obj.Nout) + obj.yk;
-            obj.stripy = [yin yout];
-            obj.dyin = mean(diff(yin))/2;
-            obj.dyout = mean(diff(yout))/2;
-            for i = 1:length(obj.stripy)
-                y = obj.stripy(i);
-                if y <= obj.yk
-                    obj.dyArray(i) = obj.dyin;
-                elseif y > obj.yk && y <= obj.b
-                    obj.dyArray(i) = obj.dyout;
-                end
-            end
+            obj.stripy = splitIntoStrips(obj.b,obj.N);
+            obj.dY = mean(diff(obj.stripy))/2;
         end
         % Given y, find coordinate of x on leading edge
         function x = LEx(obj,y)
@@ -127,25 +111,27 @@ classdef WingGeometry
                 y = obj.stripy(i);
                 plot([obj.LEx(y) obj.LEx(y) + obj.c_at_y(y)], [y y], "--m")
                 hold on
-                if y <= obj.yk 
-                    plot([obj.LEx(y-obj.dyin) obj.LEx(y-obj.dyin) + obj.c_at_y(y-obj.dyin)], [y-obj.dyin y-obj.dyin], "m")
-                    hold on
-                    plot([obj.LEx(y+obj.dyin) obj.LEx(y+obj.dyin) + obj.c_at_y(y+obj.dyin)], [y+obj.dyin y+obj.dyin], "m")
-                    hold on
-                elseif y > obj.yk && y <= obj.b
-                    plot([obj.LEx(y-obj.dyout) obj.LEx(y-obj.dyout) + obj.c_at_y(y-obj.dyout)], [y-obj.dyout y-obj.dyout], "m")
-                    hold on
-                    plot([obj.LEx(y+obj.dyout) obj.LEx(y+obj.dyout) + obj.c_at_y(y+obj.dyout)], [y+obj.dyout y+obj.dyout], "m")
-                    hold on
-                end
+                
+                y_minus_dY = max(0, y - obj.dY); % Ensure y is not negative
+                plot([obj.LEx(y_minus_dY) obj.LEx(y_minus_dY) + obj.c_at_y(y_minus_dY)], [y_minus_dY, y_minus_dY], "m")
+                hold on
+                
+                plot([obj.LEx(y + obj.dY) obj.LEx(y + obj.dY) + obj.c_at_y(y + obj.dY)], [y + obj.dY, y + obj.dY], "m")
+                hold on
             end
         end
         %Calculate area of each strip
         function obj = calcSc(obj)
             for i = 1:length(obj.stripy)
-                c1 = obj.c_at_y(obj.stripy(i)+obj.dyArray(i));
-                c2 = obj.c_at_y(obj.stripy(i)-obj.dyArray(i));
-                obj.Sc(i) = (c1 + c2)*obj.dyArray(i)/2;
+                c1 = obj.c_at_y(obj.stripy(i)+obj.dY);
+                c2 = obj.c_at_y(max(0,obj.stripy(i)-obj.dY));
+                if c1 > obj.yk && c2 < obj.yk
+                    A1 = (c1 + obj.yk)*(c1 - obj.yk)/2;
+                    A2 = (c2 + obj.yk)*(obj.yk - c2)/2;
+                    obj.Sc(i) = A1 + A2;
+                else
+                    obj.Sc(i) = (c1 + c2)*obj.dY/2;
+                end
             end
         end
    end
