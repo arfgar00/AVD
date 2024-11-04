@@ -7,44 +7,44 @@ classdef WingGeometry
       yk          % Spanwise location of the kink
       Lambdain50  % Inboard sweep angle at 50% chord
       Lambdaout50 % Outboard sweep angle at 50% chord
-      SREF        % SREF of two wings
-      N         % Strip theory: number of strips in inner section
+      N           % Strip theory: number of strips in inner section
       Sc          % Area of each strip
       stripy      % Mid point y coordinate of each strip, size = 1x(Nin + Nout)
       AR          % Aspect ratio
-      Sin         % Area of inner section
-      Sout        % Area of outer section
-      MAC         % Mean aerodynamic chord length
+      Sin         % Area of inner section (2 wing)
+      Sout        % Area of outer section (2 wing)
+      cbar         % Mean aerodynamic chord length
+      b           % Legacy semi-Wingspan symbol
+      SREF        % Reference area on one side
    end
-   properties (Access = private)
-        b           % Legacy semi-Wingspan symbol
-        Sref        % Reference area on one side
-        dY     % dy of each strip
+   properties (Access = private) 
+        dY          % dy of each strip
    end
    
    methods
         % Method to calculate the reference area and aspect ratio
         function obj = calcSref(obj)
-             obj.b = obj.s;
-             obj.Sref = (obj.cr + obj.ck) * (obj.yk) / 2 + (obj.ct + obj.ck) * (obj.b - obj.yk) / 2;
-             obj.SREF = obj.Sref*2;
-             obj.AR = obj.b^2 / obj.Sref;
-             obj.Sin = (obj.cr + obj.ck)*obj.yk/2;
-             obj.Sout = (obj.ck + obj.ct)*(obj.b - obj.yk)/2;
-             obj.MAC = obj.Sref/(obj.s);
+             obj.b = 2*obj.s;
+             obj.SREF = ((obj.cr + obj.ck) * (obj.yk) / 2 + (obj.ct + obj.ck) * (obj.s - obj.yk) / 2)*2;
+             obj.AR = (obj.b)^2 / obj.SREF;
+             obj.Sin = 2*(obj.cr + obj.ck)*obj.yk/2;
+             obj.Sout = 2*(obj.ck + obj.ct)*(obj.s - obj.yk)/2;
+             obj.cbar = ((obj.ck + obj.cr)/2 + (obj.ck + obj.ct)/2)/2;
         end
         % Get sweep angle at coordinate (x_c,y)
-        function Lambda = Lambdax_c(obj,x_c,y)
+         function Lambda = Lambdax_c(obj,x_c,y)
             if y >= 0 && y <= obj.yk
                 dy = obj.yk;
                 x2 = 0.5*obj.cr + dy*tan(obj.Lambdain50) - (0.5 - x_c)*obj.ck;
                 x1 = x_c*obj.cr;
                 Lambda = atan((x2 - x1)/dy);
-            elseif y > obj.yk && y <= obj.b
-                dy = obj.b - obj.yk;
+            elseif y > obj.yk && y <= obj.s
+                dy = obj.s - obj.yk;
                 x2 = 0.5*obj.ck + dy*tan(obj.Lambdaout50) - (0.5 - x_c)*obj.ct;
                 x1 = x_c*obj.ck;
                 Lambda = atan((x2 - x1)/dy);
+            else
+                error('Lambdax_c:InvalidY', 'Input y = %f is outside the wing semi-span [0, %f]', y, obj.s);
             end
         end
         % Get chord length at y
@@ -59,7 +59,7 @@ classdef WingGeometry
             Lambdaout1 = obj.Lambdax_c(1,y);
             if y <= obj.yk
                 c = obj.cr + y*(tan(Lambdain1) - tan(Lambdain0));
-            elseif y > obj.yk && y <= obj.b
+            elseif y > obj.yk && y <= obj.s
                 c = obj.ck + (y-obj.yk)*(tan(Lambdaout1) - tan(Lambdaout0));
             end
         end
@@ -72,8 +72,8 @@ classdef WingGeometry
                 xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
                 xk1 = obj.cr+obj.yk*tan(obj.Lambdax_c(1,0));
 
-                xt0 = xk0+(obj.b - obj.yk)*tan(obj.Lambdax_c(0,obj.b));
-                xt1 = xk1+(obj.b - obj.yk)*tan(obj.Lambdax_c(1,obj.b));
+                xt0 = xk0+(obj.s - obj.yk)*tan(obj.Lambdax_c(0,obj.s));
+                xt1 = xk1+(obj.s - obj.yk)*tan(obj.Lambdax_c(1,obj.s));
 
                 plot([0 xk0], [0 obj.yk],"b")
                 hold on
@@ -82,18 +82,18 @@ classdef WingGeometry
                 plot([xk0  xk1], [obj.yk obj.yk],"b")
                 hold on
                 
-                plot([xk0 xt0], [obj.yk obj.b],"b")
+                plot([xk0 xt0], [obj.yk obj.s],"b")
                 hold on
-                plot([xk1 xt1], [obj.yk obj.b],"b")
+                plot([xk1 xt1], [obj.yk obj.s],"b")
                 hold on
-                plot([xt0 xt1], [obj.b obj.b],"b")
+                plot([xt0 xt1], [obj.s obj.s],"b")
 
                 %plot mid-line sweep angle
                 xk5 = 0.5*obj.cr + obj.yk*tan(obj.Lambdax_c(0.5,0));
-                xt5 = xk5+(obj.b - obj.yk)*tan(obj.Lambdax_c(0.5,obj.b));
+                xt5 = xk5+(obj.s - obj.yk)*tan(obj.Lambdax_c(0.5,obj.s));
                 plot([0.5*obj.cr xk5], [0 obj.yk],"--b")
                 hold on
-                plot([xk5 xt5], [obj.yk obj.b],"--b")
+                plot([xk5 xt5], [obj.yk obj.s],"--b")
         end
         % Create strips on the wing
         function obj =  createStrips(obj)
@@ -101,7 +101,7 @@ classdef WingGeometry
                 strip_length = x / N;
                 midpoints = (strip_length / 2) : strip_length : (x - strip_length / 2);
             end
-            obj.stripy = splitIntoStrips(obj.b,obj.N);
+            obj.stripy = splitIntoStrips(obj.s,obj.N);
             obj.dY = mean(diff(obj.stripy))/2;
         end
         % Given y, find coordinate of x on leading edge
@@ -109,8 +109,8 @@ classdef WingGeometry
             xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
             if y <= obj.yk
                 x = y*tan(obj.Lambdax_c(0,0));
-            elseif y > obj.yk && y <= obj.b
-                x = xk0 + (y - obj.yk)*tan(obj.Lambdax_c(0,obj.b));
+            elseif y > obj.yk && y <= obj.s
+                x = xk0 + (y - obj.yk)*tan(obj.Lambdax_c(0,obj.s));
             end
         end
         % Plot strips on the wing
@@ -131,14 +131,14 @@ classdef WingGeometry
         %Calculate area of each strip
         function obj = calcSc(obj)
             for i = 1:length(obj.stripy)
-                c1 = obj.c_at_y(obj.stripy(i)+obj.dY);
+                c1 = obj.c_at_y(min(obj.stripy(i) + obj.dY, obj.s));
                 c2 = obj.c_at_y(max(0,obj.stripy(i)-obj.dY));
                 if c1 > obj.yk && c2 < obj.yk
                     A1 = (c1 + obj.yk)*(c1 - obj.yk)/2;
                     A2 = (c2 + obj.yk)*(obj.yk - c2)/2;
                     obj.Sc(i) = A1 + A2;
                 else
-                    obj.Sc(i) = (c1 + c2)*obj.dY/2;
+                    obj.Sc(i) = (c1 + c2)*2*obj.dY/2;
                 end
             end
         end

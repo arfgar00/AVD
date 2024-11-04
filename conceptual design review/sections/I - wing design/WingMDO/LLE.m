@@ -1,4 +1,4 @@
-function [C_L,CDi] = LLE(mywing,myairfoil,myAirCondition,N,D)
+function [C_L,CDi,Cly] = LLE(mywing,myairfoil,myAirCondition,N,D)
         % Step 1: Define wing and flight parameters for a Boeing 777 
         b = 2*mywing.s;
         y = linspace(-mywing.s, mywing.s, N);  % Spanwise positions from -b/2 to b/2
@@ -116,22 +116,31 @@ function [C_L,CDi] = LLE(mywing,myairfoil,myAirCondition,N,D)
         
 
         % Step 12: Calculate reference area (S)
-        S = (b) * mean(chord); % Reference area based on average chord length
+        S = mywing.SREF; % Reference area based on average chord length
         
         % Step 13: Calculate sectional lift coefficient C_L
         C_L = (2 / (V_inf * S)) * total_circulation;
         
         % Step 14: Plot the final circulation distribution across the span
-        figure;
-        clf;
-        plot(y, Gamma_old, 'LineWidth', 1.5); % Plot circulation
-        xlabel('Spanwise Position (y)');
-        ylabel('Circulation (\Gamma)');
-        grid on;
-        
+        % figure;
+        % clf;
+        % plot(y, Gamma_old, 'LineWidth', 1.5); % Plot circulation
+        % xlabel('Spanwise Position (y)');
+        % ylabel('Circulation (\Gamma)');
+        % grid on;
+
+        %plot Cl distribution
+        % figure;
+        % clf;
+        Cl = 2*Gamma_old./(V_inf.*chord);
+        % plot(y,Cl)
+        % xlabel('Spanwise Position (y)');
+        % ylabel("Cl")
+        % grid on
+        Cly = [y; Cl];
         CDi = (2 / (V_inf * S)) * total_circulation_alpha;
         
-        % Step 17: Output the total lift coefficient C_L
-        fprintf('Total Lift Coefficient (C_L): %.6f\n', C_L);
-        fprintf('Total Induced Drag (CDi): %.6f\n', CDi);
+        % % Step 17: Output the total lift coefficient C_L
+        % fprintf('Total Lift Coefficient (C_L): %.6f\n', C_L);
+        % fprintf('Total Induced Drag (CDi): %.6f\n', CDi);
 end
