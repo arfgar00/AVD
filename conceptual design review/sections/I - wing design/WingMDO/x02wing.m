@@ -7,5 +7,6 @@ function wing = x02wing(x)
     wing.Lambdain50 = x(5);
     wing.Lambdaout50 = x(6);
     wing.yk = x(7);
+    wing.twist_max = x(8);
     wing = wing.calcSref();
 end

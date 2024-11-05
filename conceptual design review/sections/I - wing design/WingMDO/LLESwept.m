@@ -3,23 +3,20 @@ mywing = WingGeometry();
 mywing.cr = 10;
 mywing.ck = 8;
 mywing.ct = 4;
-mywing.s = 65/2;
+mywing.s = 28.45/2;
 mywing.Lambdain50 = 20*pi/180;
-mywing.Lambdaout50 = 25*pi/180;
-mywing.yk = 10;
+mywing.Lambdaout50 = 30*pi/180;
+mywing.yk = 3;
 mywing = mywing.calcSref();
 mywing.N = 31;
-AR = mywing.AR;
 figure(1)
 clf;
-
 mywing.plotWing()
-axis equal
+
 airfoil = Airfoil();
 airfoil = airfoil.readPolar("xf-sc21010-il-1000000.csv");
 airfoil = airfoil.readShape("sc21010.dat.txt");
 airfoil = airfoil.interpShape(9);
-a0 = airfoil.a0;
 myairfoil = airfoil
 
 c = mywing.cbar;
@@ -30,8 +27,7 @@ cruise = cruise.init(mywing.cbar)
 myAirCondition = cruise
 %% 
 N = 50;
-Damping = 10e-2;
-twist = @(s,y) deg2rad(2)/s * abs(y);
+Damping = 2e-2
 
 %% 
 % Step 1: Define wing and flight parameters for a Boeing 777 
@@ -49,12 +45,11 @@ y = linspace(-s, s, N)';  % Column vector
 % Adjust for the sweep angle by modifying the effective chord lengths
 for i = 1:length(y)
     cn(i) = mywing.c_at_y(abs(y(i)));
-    alpha(i) = twist(s,y(i));
-    Lambda(i) = mywing.Lambdax_c(0.25, abs(y(i)))
+    Lambda(i) = mywing.Lambdax_c(0.5,abs(y(i)));
 end
-%alpha = twist_y
+
 % Display or use the chord distribution as needed
-%alpha = deg2rad(6);   % Angle of attack in radians
+alpha = deg2rad(6);   % Angle of attack in radians
 U_inf = myAirCondition.V;          % Freestream velocity in m/s (typical cruise speed)
 rho = myAirCondition.rho;          % Air density in kg/m^3
 converr = 1e-5;       % Convergence criteria
@@ -105,7 +100,8 @@ while converged == false
     for i = 1:length(alphae)
         CLp(i) = myairfoil.interpPolar(alphae(i));
     end
-    Gamma = 1/2*U_inf.*cn'.*CLp'.*cos(Lambda');
+    Gamma = 1/2*U_inf.*cn'.*CLp'.*Lambda';
+    %Gamma = 1/2*U_inf.*cn'.*CLp';
 
     figure(3)
     clf;
@@ -131,52 +127,12 @@ while converged == false
 
     Gamma_old = Gamma_old + Damping * (Gamma - Gamma_old);
 end
-%% 
 CL = 2/(U_inf * mywing.SREF) * trapz(y,Gamma);
-CDi = 2/(U_inf * mywing.SREF) * trapz(y,Gamma.*alpha_induced');
+CDi = 2/(U_inf * mywing.SREF) * trapz(y,Gamma.*alpha_induced);
 
 
 figure(5)
 clf;
-plot(y,Gamma)
-% Maximum lift coefficient at the root
-Gamma_max = max(Gamma);
-% Ideal elliptical lift coefficient distribution
-Gamma_ideal = Gamma_max * sqrt(1 - (2 * y / b).^2);  % Element-wise operations
-% Ensure lift coefficient is zero outside the wing span (for numerical safety)
-Gamma_ideal(abs(y) > b/2) = 0;
-hold on
-plot(y, Gamma_ideal, 'r--');
+plot(y,rho*U_inf*Gamma_old)
 xlabel("y")
-ylabel("Circulation")
-ylim([min(Gamma_ideal) max(Gamma_ideal)])
-xlim([0 max(y)])
-legend("Actual","Ideal")
-
-figure(6)
-clf;
-plot(y,twist(s,y)*180/pi)
-hold on
-
-A1 = CL/(pi*AR);
-% Define Theta Grid (from 0 to pi/2 radians)
-N_theta = 100;                      % Number of theta points
-theta = linspace(0, pi, N_theta)';  % Column vector (N_theta x 1)
-% Compute y(theta)
-y_theta = mywing.s * cos(theta);     % y = s * cos(theta), (N_theta x 1)
-c_theta = interp1(y, cn, y_theta, 'linear', 'extrap');  % (N_theta x 1)
-
-mu_theta = a0*c_theta / (8*s);
-twist_ideal = A1 * (mu_theta + sin(theta))./ mu_theta;
-hold on
-twist_y = interp1(y_theta, twist_ideal, y, 'linear', 'extrap');
-plot(y, twist_y*180/pi)
-xlabel("y")
-ylabel("Twist [degrees]")
-xlim([0 max(y)])
-
-figure(8)
-clf;
-plot(y,cn)
-hold on
-plot(y_theta,c_theta)
+ylabel("Lift")

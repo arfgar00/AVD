@@ -1,9 +1,9 @@
-function [CL,CDi,Cly] = LLE_new(mywing,myairfoil,myAirCondition,alpha,N,Damping)
+function [CL,CDi,Cly] = LLE_new(mywing,myairfoil,myAirCondition,N,Damping)
+    %linear twist
+
     % Step 1: Define wing and flight parameters for a Boeing 777 
     b = 2*mywing.s;
     % Define total number of points
-    
-    
     % Define the wing semi-span
     s = mywing.s;  % Semi-span in meters
     
@@ -14,6 +14,8 @@ function [CL,CDi,Cly] = LLE_new(mywing,myairfoil,myAirCondition,alpha,N,Damping)
     % Adjust for the sweep angle by modifying the effective chord lengths
     for i = 1:length(y)
         cn(i) = mywing.c_at_y(abs(y(i)));
+        Lambda(i) = mywing.Lambdax_c(0.25,abs(y(i))); %sweep at quarter quard
+        alpha(i) = mywing.twist_max / mywing.s * abs(y(i));
     end
     
     % Display or use the chord distribution as needed
@@ -62,7 +64,7 @@ function [CL,CDi,Cly] = LLE_new(mywing,myairfoil,myAirCondition,alpha,N,Damping)
         for i = 1:length(alphae)
             CLp(i) = myairfoil.interpPolar(alphae(i));
         end
-        Gamma = 1/2*U_inf.*cn'.*CLp';
+        Gamma = 1/2*U_inf.*cn'.*CLp'.*cos(Lambda');
     
         figure(3)
         clf;
