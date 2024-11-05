@@ -16,6 +16,7 @@ classdef WingGeometry
       cbar         % Mean aerodynamic chord length
       b           % Legacy semi-Wingspan symbol
       SREF        % Reference area on one side
+      twist_max   %maximum twist in radians
    end
    properties (Access = private) 
         dY          % dy of each strip

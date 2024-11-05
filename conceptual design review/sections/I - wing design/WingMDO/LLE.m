@@ -8,12 +8,11 @@ function [C_L,CDi,Cly] = LLE(mywing,myairfoil,myAirCondition,N,D)
         end
         
         % Display or use the chord distribution as needed
-        alpha = deg2rad(12.81);   % Angle of attack in radians
+        alpha = deg2rad(0);   % Angle of attack in radians
         V_inf = myAirCondition.V;          % Freestream velocity in m/s (typical cruise speed)
         rho = myAirCondition.rho;          % Air density in kg/m^3
         epsilon = 1e-13;       % Convergence criteria
-        a0 = 6.105;             % Lift curve slope for Boeing 777 airfoil in per radian (approx)
-        
+
         % Step 3: Initial guess for elliptical circulation distribution
         Gamma_old = zeros(1, N); % Initialize Gamma_old to zeros
         for i = 1:N
@@ -33,51 +32,11 @@ function [C_L,CDi,Cly] = LLE(mywing,myairfoil,myAirCondition,N,D)
             % Step 5: Calculate induced angle of attack using Lanchester-Prandtl lifting-line theory
             alpha_induced = zeros(1, N);
             dy = y(2) - y(1); % Interval size for Simpson's rule
-            for i = 1:N
-                % Apply Simpson's rule to calculate the induced downwash
-                integral_sum = 0;
-                for j = 1:N
-                    if i ~= j
-                        % Calculate distance
-                        distance = y(j) - y(i);
-                        
-                        % Check for singularity
-                        if abs(distance) < 1e-20 % Handling singularity case
-                            % Use average of neighboring values
-                            if i > 1 && i < N
-                                distance = (y(j) - y(i-1) + y(j) - y(i+1)) / 2;
-                            elseif i == 1
-                                distance = (y(j) - y(i+1));
-                            else
-                                distance = (y(j) - y(i-1));
-                            end
-                        end
-                        
-                        % Simpson's rule weighting
-                        if j == 1 || j == N
-                            factor = 1; % Weight for first and last points
-                        elseif mod(j, 2) == 0
-                            factor = 2; % Weight for even points
-                        else
-                            factor = 4; % Weight for odd points
-                        end
-            
-                        % Calculate the gradient of circulation at point i
-                        if i > 1 && i < N
-                            grad_Gamma_i = (Gamma_old(i+1) - Gamma_old(i-1)) / (2 * dy); % Central difference
-                        elseif i == 1
-                            grad_Gamma_i = (Gamma_old(2) - Gamma_old(1)) / dy; % Forward difference
-                        else
-                            grad_Gamma_i = (Gamma_old(N) - Gamma_old(N-1)) / dy; % Backward difference
-                        end
-                        
-                        % Accumulate weighted contribution using the gradient
-                        integral_sum = integral_sum + factor / distance * grad_Gamma_i;
-                    end
-                end
-                integral_sum = (dy / 3) * integral_sum; % Apply Simpson's rule scaling
-                alpha_induced(i) = integral_sum / (4 * pi * V_inf);
-            end    
+            for i = 1:length(y)
+                yn = y(i);
+                dGamma_dy = gradient(Gamma, y);
+                
+            end
             % Step 6: Calculate effective angle of attack
             alpha_eff = alpha - alpha_induced;
 
@@ -132,7 +91,7 @@ function [C_L,CDi,Cly] = LLE(mywing,myairfoil,myAirCondition,N,D)
         %plot Cl distribution
         % figure;
         % clf;
-        Cl = 2*Gamma_old./(V_inf.*chord);
+        %Cl = 2*Gamma_old./(V_inf.*chord);
         % plot(y,Cl)
         % xlabel('Spanwise Position (y)');
         % ylabel("Cl")

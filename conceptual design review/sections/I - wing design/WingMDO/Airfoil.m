@@ -11,6 +11,8 @@ classdef Airfoil
         t_cfun            % thickness/chord function from interpolation
         t_c               % maximum thickness/chord
         x_cm              % x_c location at maximum thickness
+        a0
+        b
     end
     
     methods
@@ -19,6 +21,36 @@ classdef Airfoil
             obj.Cl = tab.Cl;
             obj.alpha = tab.Alpha.*pi/180;
             obj.Cd = tab.Cd;
+             % Define the range in radians
+            alpha_min_deg = -5;  % Minimum angle in degrees
+            alpha_max_deg = 5;   % Maximum angle in degrees
+            alpha_min = alpha_min_deg * pi / 180;  % Convert to radians
+            alpha_max = alpha_max_deg * pi / 180;  % Convert to radians
+            
+            % Find indices within the specified range
+            idx_linear = (obj.alpha >= alpha_min) & (obj.alpha <= alpha_max);
+            
+            % Extract the linear region data
+            alpha_linear = obj.alpha(idx_linear);
+            Cl_linear = obj.Cl(idx_linear);
+            
+            % -------------------------------
+            % Step 4: Check for Sufficient Data Points
+            % -------------------------------
+            
+            % Ensure there are enough points for a reliable fit
+            if length(alpha_linear) < 2
+                error('Not enough data points within the range of -5 to +5 degrees for linear fit.');
+            end
+            
+            % -------------------------------
+            % Step 5: Perform Linear Regression (Polyfit)
+            % -------------------------------
+            
+            % Perform linear fit: Cl = a0 * alpha + b
+            p = polyfit(alpha_linear, Cl_linear, 1);
+            obj.a0 = p(1);  % Lift curve slope (Cl per radian)
+            obj.b = p(2);   % Intercept (Cl at alpha = 0)
         end
 
         function plotPolar(obj)
