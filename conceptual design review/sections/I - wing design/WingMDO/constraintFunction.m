@@ -4,11 +4,11 @@ function [c, ceq] = constraintFunction(x)
     c = [-optIdx];  % Ensures optIdx >= 0
     
     % Design variables
-    cr = x(1);
-    ck = x(2);
-    ct = x(3);
-    s = x(4);
-    yk = x(7);
+    cr = 12;
+    ck = x(1);
+    ct = x(2);
+    s = 65/2;
+    yk = x(5);
     
     % Inequality constraints (c <= 0)
     c = [

@@ -28,13 +28,14 @@ function optIndex = wingMDO(x)
     airfoil = airfoil.interpShape(9);
     
     wing = WingGeometry();
-    wing.cr = x(1);
-    wing.ck = x(2);
-    wing.ct = x(3);
-    wing.s = x(4);
-    wing.Lambdain50 = x(5);
-    wing.Lambdaout50 = x(6);
-    wing.yk = x(7);
+    wing.cr = 12;
+    wing.ck = x(1);
+    wing.ct = x(2);
+    wing.s = 65/2;
+    wing.Lambdain50 = x(3);
+    wing.Lambdaout50 = x(4);
+    wing.yk = x(5);
+    wing.twist_max = x(6);
     wing = wing.calcSref();
     wing.N = 50;
     wing = wing.createStrips();
@@ -42,7 +43,7 @@ function optIndex = wingMDO(x)
 
     cruise = cruise.init(wing.cbar);
 
-    [CLclean, CDi, Cly] = LLE_new(wing,airfoil,cruise,0*pi/180,40,1e-2);
+    [CLclean, CDi, Cly] = LLE_new(wing,airfoil,cruise,40,2e-1);
     CDF = CDFfun(cruise.M, cruise.Re, wing, airfoil.x_cm, airfoil.t_c, l_d, Swet_SrefWing, Swet_SrefBody);
     CDW = CDWfun(wing,Cly,cruise.M,airfoil.t_c);
     CDtotal = CDF + CDW + CDi;
@@ -58,6 +59,6 @@ function optIndex = wingMDO(x)
     
     [T_65, c_65, P_65, rho_65] = atmosisa(h_cruise2);
     M_cruise2 =  v_of_second_cruise/c_65;
-    [W_f_0, W_i] = Wf_W0(cruise.h, h_cruise2, cruise.M, M_cruise2, L_D, C_cruise)
-    optIndex = W_f_0*Ww/Wto %index to minimize
+    %[W_f_0, W_i] = Wf_W0(cruise.h, h_cruise2, cruise.M, M_cruise2, L_D, C_cruise)
+    optIndex = Ww/L_D %index to minimize
 end
