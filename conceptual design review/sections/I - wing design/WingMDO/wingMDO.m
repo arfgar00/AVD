@@ -42,7 +42,7 @@ function optIndex = wingMDO(x)
 
     cruise = cruise.init(wing.cbar);
 
-    [CLclean, CDi, Cly] = LLE(wing,airfoil,cruise,51,1e-4);
+    [CLclean, CDi, Cly] = LLE_new(wing,airfoil,cruise,0*pi/180,40,1e-2);
     CDF = CDFfun(cruise.M, cruise.Re, wing, airfoil.x_cm, airfoil.t_c, l_d, Swet_SrefWing, Swet_SrefBody);
     CDW = CDWfun(wing,Cly,cruise.M,airfoil.t_c);
     CDtotal = CDF + CDW + CDi;

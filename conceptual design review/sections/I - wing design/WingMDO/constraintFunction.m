@@ -1,21 +1,35 @@
 function [c, ceq] = constraintFunction(x)
-    % Inequality constraints (c <= 0)
-    % Existing inequality constraints (if any)
+    % Existing constraints
     optIdx = wingMDO(x);
-    c = [-optIdx];  % Ensures optIdx >= 0 ];
+    c = [-optIdx];  % Ensures optIdx >= 0
+    
+    % Design variables
+    cr = x(1);
+    ck = x(2);
+    ct = x(3);
+    s = x(4);
+    yk = x(7);
+    
+    % Inequality constraints (c <= 0)
+    c = [
+        c;                % Existing constraints
+        ck - cr;          % Ensures ck <= cr
+        ct - ck;          % Ensures ct <= ck
+        yk - s            % Ensures yk <= s
+    ];
     
     % Desired wing area
     S_desired = 515.2;  % Replace with your target wing area value
     
     % Calculate the wing area
     wing = WingGeometry();
-    wing.cr = x(1);
-    wing.ck = x(2);
-    wing.ct = x(3);
-    wing.s = x(4);
+    wing.cr = cr;
+    wing.ck = ck;
+    wing.ct = ct;
+    wing.s = s;
     wing.Lambdain50 = x(5);
     wing.Lambdaout50 = x(6);
-    wing.yk = x(7);
+    wing.yk = yk;
     wing = wing.calcSref();
     area = wing.SREF;
     

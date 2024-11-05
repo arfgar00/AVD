@@ -1,15 +1,17 @@
 %% 
-wing = WingGeometry();
-wing.cr = 5;
-wing.ck = 5;
-wing.ct = 5;
-wing.s = 28.45/2;
-wing.Lambdain50 = 0*pi/180;
-wing.Lambdaout50 = 0*pi/180;
-wing.yk = 5.69;
-wing = wing.calcSref();
-wing.N = 31;
-mywing = wing;
+mywing = WingGeometry();
+mywing.cr = 10;
+mywing.ck = 8;
+mywing.ct = 4;
+mywing.s = 28.45/2;
+mywing.Lambdain50 = 20*pi/180;
+mywing.Lambdaout50 = 25*pi/180;
+mywing.yk = 3;
+mywing = mywing.calcSref();
+mywing.N = 31;
+figure(1)
+clf;
+mywing.plotWing()
 
 airfoil = Airfoil();
 airfoil = airfoil.readPolar("xf-sc21010-il-1000000.csv");
@@ -17,14 +19,14 @@ airfoil = airfoil.readShape("sc21010.dat.txt");
 airfoil = airfoil.interpShape(9);
 myairfoil = airfoil
 
-c = wing.cbar;
+c = mywing.cbar;
 cruise = AirCondition()
 cruise.M = 0.8;
 cruise.h = convlength(39000, 'ft','m');
-cruise = cruise.init(wing.cbar)
+cruise = cruise.init(mywing.cbar)
 myAirCondition = cruise
 %% 
-N = 20;
+N = 40;
 Damping = 8e-2
 
 %% 
@@ -46,13 +48,13 @@ for i = 1:length(y)
 end
 
 % Display or use the chord distribution as needed
-alpha = deg2rad(8);   % Angle of attack in radians
+alpha = deg2rad(6);   % Angle of attack in radians
 U_inf = myAirCondition.V;          % Freestream velocity in m/s (typical cruise speed)
 rho = myAirCondition.rho;          % Air density in kg/m^3
-epsilon = 1e-13;       % Convergence criteria
+converr = 1e-5;       % Convergence criteria
 
 % Step 3: Initial guess for elliptical circulation distribution
-Gamma_old = zeros(1, N); % Initialize Gamma_old to zeros
+Gamma_old = zeros(N,1); % Initialize Gamma_old to zeros
 for i = 1:N
     if abs(y(i)) <= b/2
         Gamma_old(i) = sqrt(1 - (2*y(i)/b)^2); % Assign elliptical lift distribution
@@ -60,8 +62,8 @@ for i = 1:N
         Gamma_old(i) = 0; % Set to zero outside the span
     end
 end
-Gamma_old = Gamma_old.*1000
-figure(1)
+Gamma_old = Gamma_old*800;
+figure(2)
 clf;
 plot(y,Gamma_old)
 hold on
@@ -69,45 +71,66 @@ plot(y, gradient(Gamma_old,y))
 % Step 4 to 8: Iterative convergence loop
 converged = false;
 iteration = 0; % Counter to keep track of iteration
-while iteration <= 10000
+while converged == false
     iteration = iteration + 1;
     
     % Compute the derivative of Gamma with respect to y
     dGamma_dy = gradient(Gamma_old, y);  % Result is (Ny x 1)
     dGamma_dy = dGamma_dy(:);  % Converts dGamma_dy to a column vector (N x 1)
-    % Step 2: Create the difference matrix D
-    % D(i, j) = y_i - y_j
-    [Y_i, Y_j] = meshgrid(y, y);   % Both are (N x N)
-    D = Y_i - Y_j;                 % (N x N)
+    % Integrate to find alpha induced(y)
+    % Define a small exclusion distance epsilon
+    epsilon = 2.22e-16; % Adjust this value based on the scale of y and the accuracy required
+    for i = 1:length(y)
+        % Define the integrand, excluding values where |y(i) - y| < epsilon
+        integrand = dGamma_dy ./ (y(i) - y);
+        
+        % Apply the exclusion condition
+        mask = abs(y - y(i)) > epsilon;
+        integrand(~mask) = 0; % Set the integrand to zero where |y(i) - y| < epsilon
+        
+        % Perform the integration with trapz on the masked integrand
+        alpha_induced(i) = 1 / (4 * pi * U_inf) * trapz(y(mask), integrand(mask));
+    end
     
-    % Step 3: Handle the singularity at D = 0
-    % Set diagonal elements to NaN or a small value to avoid division by zero
-    D(logical(eye(N))) = NaN;  % Alternatively, D(logical(eye(N))) = eps;
-    
-    % Step 4: Replicate dGamma_dy for matrix operations
-    % We need dGamma_dy(j) for each (i, j)
-    dGamma_dy_mat = ones(N, 1) * dGamma_dy';
-    
-    % Step 5: Compute the integrand
-    integrand = dGamma_dy_mat ./ D;  % Element-wise division, (N x N)
-    
-    % Step 6: Handle the singularity in the integrand
-    integrand(isnan(integrand)) = 0;  % Set NaN values to zero
-    
-    % Step 7: Perform numerical integration over y_j for each y_i
-    % Integrate along the columns (dimension 2)
-    alpha_induced = (1 / (4 * pi * U_inf)) * trapz(y, integrand, 2);  % (N x 1)
     %figure(2)
     %clf;
     %plot(y,alpha_induced)
     alphae = alpha - alpha_induced;
-    CLp = myairfoil.interpPolar(alphae);
-    Gamma = 1/2*U_inf.*cn'.*CLp;
-    Gamma_old = Gamma_old(:);
+    for i = 1:length(alphae)
+        CLp(i) = myairfoil.interpPolar(alphae(i));
+    end
+    Gamma = 1/2*U_inf.*cn'.*CLp';
+
     figure(3)
     clf;
     plot(y,Gamma)
     hold on
     plot(y,Gamma_old)
+    
+
+    % Step 9: Check convergence
+    diff = abs(Gamma_old - Gamma) ./ (abs(Gamma) ); 
+    max_diff = max(diff); % Maximum relative difference for convergence check
+    %fprintf('Iteration %d: Max relative difference = %.20f\n', iteration, max_diff);
+    
+    if max_diff < converr
+        converged = true;
+        disp('Process is complete! Converged circulation distribution found.');
+        break;
+    end
+
+    if iteration > 100000
+        break;
+    end
+
     Gamma_old = Gamma_old + Damping * (Gamma - Gamma_old);
 end
+CL = 2/(U_inf * mywing.SREF) * trapz(y,Gamma);
+CDi = 2/(U_inf * mywing.SREF) * trapz(y,Gamma.*alpha_induced);
+
+
+figure(5)
+clf;
+plot(y,rho*U_inf*Gamma_old)
+xlabel("y")
+ylabel("Lift")
