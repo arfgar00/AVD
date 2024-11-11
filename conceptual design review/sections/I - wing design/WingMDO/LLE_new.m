@@ -64,7 +64,7 @@ function [CL,CDi,Cly] = LLE_new(mywing,myairfoil,myAirCondition,N,Damping)
         for i = 1:length(alphae)
             CLp(i) = myairfoil.interpPolar(alphae(i));
         end
-        Gamma = 1/2*U_inf.*cn'.*CLp'.*cos(Lambda');
+        Gamma = 1/2*U_inf.*cn'.*CLp';
     
         figure(3)
         clf;

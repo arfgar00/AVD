@@ -11,8 +11,10 @@ classdef Airfoil
         t_cfun            % thickness/chord function from interpolation
         t_c               % maximum thickness/chord
         x_cm              % x_c location at maximum thickness
-        a0
-        b
+        a0               % CL = a0*alpha + b
+        b                % CL = a0*alpha + b
+        alphaSPos        % positive stall angle of attack
+        alphaSNeg        % negative stall angle of attack
     end
     
     methods
@@ -22,8 +24,8 @@ classdef Airfoil
             obj.alpha = tab.Alpha.*pi/180;
             obj.Cd = tab.Cd;
              % Define the range in radians
-            alpha_min_deg = -5;  % Minimum angle in degrees
-            alpha_max_deg = 5;   % Maximum angle in degrees
+            alpha_min_deg = -7;  % Minimum angle in degrees
+            alpha_max_deg = 7;   % Maximum angle in degrees
             alpha_min = alpha_min_deg * pi / 180;  % Convert to radians
             alpha_max = alpha_max_deg * pi / 180;  % Convert to radians
             
@@ -51,11 +53,17 @@ classdef Airfoil
             p = polyfit(alpha_linear, Cl_linear, 1);
             obj.a0 = p(1);  % Lift curve slope (Cl per radian)
             obj.b = p(2);   % Intercept (Cl at alpha = 0)
+            [~, maxIndex] = max(obj.Cl);
+            obj.alphaSPos = obj.alpha(maxIndex);
+            [~, minIndex] = min(obj.Cl);
+            obj.alphaSNeg = obj.alpha(minIndex);
         end
 
         function plotPolar(obj)
             subplot(2,2,1)
             plot(obj.alpha.*180/pi, obj.Cl)
+            hold on
+            plot(obj.alpha.*180/pi, obj.alpha*obj.a0 + obj.b,'--')
             xlabel("alpha")
             ylabel("Cl")
             subplot(2,2,2)

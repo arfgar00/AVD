@@ -1,64 +1,47 @@
 function optIndex = wingMDO(x)
-    %airfoil name:
-    polarName = "xf-sc21010-il-1000000.csv";
-    shapeName = "sc21010.dat.txt";
+    global airfoil cruise1 cruise2 C_cruise Wto Swet_SrefWing Swet_SrefBody l_d bdes bodyDiameter
     
     %x is the array of wing geometry to be optimized
-    %x = [cr ck ct s Lambdain50 Lambdaout50 yk]
-    
-    %Cruise condition is hard-coded in this function:
-    cruise = AirCondition();
-    cruise.M = 0.83;
-    cruise.h = convlength(39000, 'ft','m');
-    h_cruise2 = convlength(18000, 'ft','m');
-    v_of_second_cruise = convvel(400, 'kts', 'm/s');
-    C_cruise = 0.5 ./ 3600;
-
-    %Take off weight hard coded
-    Wto = 4.2188*1e5*9.81;
-
-    %Wetted area ratio is hard-coded in this function:
-    Swet_SrefWing = 2.2;
-    Swet_SrefBody = 5;
-    l_d = 10;
-
-    airfoil = Airfoil();
-    airfoil = airfoil.readPolar(polarName);
-    airfoil = airfoil.readShape(shapeName);
-    airfoil = airfoil.interpShape(9);
-    
+    %x = [cr ck ct Lambdain50 Lambdaout50 yk twistmax]
     wing = WingGeometry();
-    wing.cr = 12;
-    wing.ck = x(1);
-    wing.ct = x(2);
-    wing.s = 65/2;
-    wing.Lambdain50 = x(3);
-    wing.Lambdaout50 = x(4);
-    wing.yk = x(5);
-    wing.twist_max = x(6);
+    wing.cr = x(1);
+    wing.ck = x(2);
+    wing.ct = x(3);
+    wing.s = bdes/2;
+    wing.Lambdain50 = x(4);
+    wing.Lambdaout50 = x(5);
+    wing.yk = x(6);
+    wing.twist_max = x(7);
     wing = wing.calcSref();
-    wing.N = 50;
+    %disp(["bdes", bdes])
+    wing.N = 501;
     wing = wing.createStrips();
     wing = wing.calcSc();
 
-    cruise = cruise.init(wing.cbar);
+    cruise1 = cruise1.init(wing.cbar);
+    cruise2 = cruise2.init(wing.cbar);
 
-    [CLclean, CDi, Cly] = LLE_new(wing,airfoil,cruise,40,2e-1);
-    CDF = CDFfun(cruise.M, cruise.Re, wing, airfoil.x_cm, airfoil.t_c, l_d, Swet_SrefWing, Swet_SrefBody);
-    CDW = CDWfun(wing,Cly,cruise.M,airfoil.t_c);
-    CDtotal = CDF + CDW + CDi;
-    disp(["CDF = ", num2str(CDF)])
-    disp(["CDW = ", num2str(CDW)])
-    disp(["CDi = ", num2str(CDi)])
-    disp(["CDtotal = ", num2str(CDtotal)])
-    disp(["CLclean = ", num2str(CLclean)])
-    L_D = CLclean/CDtotal;
-    disp(['L/D = ', num2str(L_D)]);
-    disp(["Sref = ",num2str(wing.SREF)])
-    Ww = wingWeightLTH(wing,airfoil.t_c,Wto);
+    [CLclean1, CDi1, Cly1] = LLESwept(wing,airfoil,cruise1);
+    CDF1 = CDFfun(cruise1.M, cruise1.Re, wing, airfoil.x_cm, airfoil.t_c, l_d, Swet_SrefWing, Swet_SrefBody);
+    CDW1 = CDWfun(wing,Cly1,cruise1.M,airfoil.t_c);
+    CDtotal1 = CDF1 + CDW1 + CDi1;
+    L_D1 = CLclean1/CDtotal1;
+    %disp(["L/D cruise 1 = " L_D1])
+
+    [CLclean2, CDi2, Cly2] = LLESwept(wing,airfoil,cruise2);
+    CDF2 = CDFfun(cruise2.M, cruise2.Re, wing, airfoil.x_cm, airfoil.t_c, l_d, Swet_SrefWing, Swet_SrefBody);
+    CDW2 = CDWfun(wing,Cly2,cruise2.M,airfoil.t_c);
+    CDtotal2 = CDF2 + CDW2 + CDi2;
+    L_D2 = CLclean2/CDtotal2;
+    %disp(["L/D cruise 2 = " L_D2])
+    figure(2)
+    clf;
+    wing.plotWing()
     
-    [T_65, c_65, P_65, rho_65] = atmosisa(h_cruise2);
-    M_cruise2 =  v_of_second_cruise/c_65;
-    %[W_f_0, W_i] = Wf_W0(cruise.h, h_cruise2, cruise.M, M_cruise2, L_D, C_cruise)
-    optIndex = Ww/L_D %index to minimize
+    %Structural weight
+    Ww = wingWeightLTH(wing,airfoil.t_c,Wto);
+
+    %Performance
+    W_f_0 = Wf_W0(cruise1, cruise2, L_D1, L_D2, C_cruise);
+    optIndex = Ww*L_D1; %index to minimize
 end
