@@ -14,7 +14,7 @@ function [CL,CDi,Cly] = LLE_new(mywing,myairfoil,myAirCondition,N,Damping)
     % Adjust for the sweep angle by modifying the effective chord lengths
     for i = 1:length(y)
         cn(i) = mywing.c_at_y(abs(y(i)));
-        Lambda(i) = mywing.Lambdax_c(0.25,abs(y(i))); %sweep at quarter quard
+        Lambda(i) = mywing.Lambdax_c(0.25,abs(y(i))); %sweep at quarter quard 
         alpha(i) = mywing.twist_max / mywing.s * abs(y(i));
     end
     

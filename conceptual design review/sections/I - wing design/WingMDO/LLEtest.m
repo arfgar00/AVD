@@ -1,12 +1,12 @@
 %% 
 mywing = WingGeometry();
-mywing.cr = 10;
-mywing.ck = 8;
-mywing.ct = 4;
+mywing.cr = 12;
+mywing.ck = 8.74;
+mywing.ct = 6;
 mywing.s = 65/2;
-mywing.Lambdain50 = 20*pi/180;
-mywing.Lambdaout50 = 25*pi/180;
-mywing.yk = 10;
+mywing.Lambdain50 = 0.2705;
+mywing.Lambdaout50 = 0.223;
+mywing.yk = 6;
 mywing = mywing.calcSref();
 mywing.N = 31;
 AR = mywing.AR;
@@ -24,14 +24,14 @@ myairfoil = airfoil
 
 c = mywing.cbar;
 cruise = AirCondition()
-cruise.M = 0.8;
+cruise.M = 0.83;
 cruise.h = convlength(39000, 'ft','m');
 cruise = cruise.init(mywing.cbar)
 myAirCondition = cruise
 %% 
 N = 50;
-Damping = 10e-2;
-twist = @(s,y) deg2rad(2)/s * abs(y);
+Damping = 10e-3;
+twist = @(s,y) 0.0698/s * abs(y);
 
 %% 
 % Step 1: Define wing and flight parameters for a Boeing 777 
@@ -166,7 +166,7 @@ theta = linspace(0, pi, N_theta)';  % Column vector (N_theta x 1)
 y_theta = mywing.s * cos(theta);     % y = s * cos(theta), (N_theta x 1)
 c_theta = interp1(y, cn, y_theta, 'linear', 'extrap');  % (N_theta x 1)
 
-mu_theta = a0*c_theta / (8*s);
+mu_theta = CL*c_theta / (8*s);
 twist_ideal = A1 * (mu_theta + sin(theta))./ mu_theta;
 hold on
 twist_y = interp1(y_theta, twist_ideal, y, 'linear', 'extrap');
@@ -178,5 +178,13 @@ xlim([0 max(y)])
 figure(8)
 clf;
 plot(y,cn)
+%given twist calculate chord distribution
+
+mu_ideal = A1*sqrt(1 - (y./s).^2)./(twist(s,y)-A1)
+c_ideal = mu_ideal*8*s/a0
 hold on
-plot(y_theta,c_theta)
+plot(y,c_ideal)
+legend("Straight chord","Ideal, from Elliptic")
+xlabel("y")
+ylabel("Chord")
+ylim([0 max(cn)])
