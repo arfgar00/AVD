@@ -1,5 +1,5 @@
-function [W_f_0, W_i] = ...
-    Wf_W0(h_cruise1, h_cruise2, V_cruise1, V_cruise2, LD_max, C_cruise)
+function W_f_0 = ...
+    Wf_W0(cruise1, cruise2, LD_cruise1, LD_cruise2, C_cruise)
 % This function is used to calculate the Empty Fuel
 % Fraction of the Wide Body Commercial Airliner from
 % given mission profile
@@ -12,12 +12,18 @@ function [W_f_0, W_i] = ...
 %          h_cruise1 - second cruise altitude (ft)
 %          V_cruise1 - first cruise velocity (Mach)
 %          V_cruise2 - second cruise velocity (Mach)
-%          LD_max    - L/D_max
+%          LD_cruise1   - L/D for first cruise
+%          LD_cruise2   - L/D_for second cruise
 %          C_cruise  - cruise SFC (1/s)
 
+h_cruise1 = cruise1.h;
+V_cruise1 = cruise1.V;
+h_cruise2 = cruise2.h;
+V_cruise2 = cruise2.V;
+
 % Empirical Airplane Data
-LD_cruise = 0.866 .* LD_max;        % L/D_cruise % Raymer p.41
-LD_alternate = (10 / 18) .* LD_max; % L/D_alternate % Roskam p.57
+LD_cruise = LD_cruise1;        % L/D_cruise % Raymer p.41
+LD_alternate = LD_cruise2; % L/D_alternate % Roskam p.57
 
 % Empirical Engine Data
 C_loiter = 0.8 .* C_cruise;     % SFC (1/s) % Raymer p.36
@@ -63,7 +69,7 @@ W_65 = exp((-R_65 .* C_alternate) ./ (V_65 .* LD_65));
 
 % 6-7 % Loiter at 5000 ft for 45 minutes
 E_76 = 45 * 60; % Endurance (s)
-LD_76 = LD_max; % Optimal loiter L/D ratio
+LD_76 = LD_cruise2/0.866; % Optimal loiter L/D ratio
 W_76 = exp((-E_76 .* C_loiter) ./ LD_76);
 
 % 7-8 % Descent to land

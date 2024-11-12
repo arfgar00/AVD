@@ -1,5 +1,5 @@
 function CDWnum = CDWfun(myWing,Cly,M,t_c)
-    %Eqn. 15, Eqn. 17, Eqn. 18
+    %Eqn. 15, Eqn. 17, Eqn. 18 of Ref15
     function CdWnum = CdW(M,Lambda50, t_c, Cl)
         Mcrfun = @(lambda, t_c, Cl) (0.95 - t_c./cos(lambda) - Cl/(10*cos(lambda)^2)) /cos(lambda) - (0.1/80)^(1/3);
         Mcr = Mcrfun(Lambda50,t_c, Cl);
@@ -15,5 +15,5 @@ function CDWnum = CDWfun(myWing,Cly,M,t_c)
         CdWArray = CdW(M,myWing.Lambdax_c(0.5,y),t_c,interp1(Cly(1,:),Cly(2,:),y));
         %disp(interp1(Cly(1,:),Cly(2,:),y))
     end
-    CDWnum = 2*sum(CdWArray.*myWing.Sc./myWing.SREF);
+    CDWnum = sum(CdWArray.*myWing.Sc./myWing.SREF);
 end

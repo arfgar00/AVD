@@ -1,138 +1,144 @@
-%% 
-mywing = WingGeometry();
-mywing.cr = 10;
-mywing.ck = 8;
-mywing.ct = 4;
-mywing.s = 28.45/2;
-mywing.Lambdain50 = 20*pi/180;
-mywing.Lambdaout50 = 30*pi/180;
-mywing.yk = 3;
-mywing = mywing.calcSref();
-mywing.N = 31;
-figure(1)
-clf;
-mywing.plotWing()
-
-airfoil = Airfoil();
-airfoil = airfoil.readPolar("xf-sc21010-il-1000000.csv");
-airfoil = airfoil.readShape("sc21010.dat.txt");
-airfoil = airfoil.interpShape(9);
-myairfoil = airfoil
-
-c = mywing.cbar;
-cruise = AirCondition()
-cruise.M = 0.8;
-cruise.h = convlength(39000, 'ft','m');
-cruise = cruise.init(mywing.cbar)
-myAirCondition = cruise
-%% 
-N = 50;
-Damping = 2e-2
-
-%% 
-% Step 1: Define wing and flight parameters for a Boeing 777 
-b = 2*mywing.s;
-% Define total number of points
-
-
-% Define the wing semi-span
-s = mywing.s;  % Semi-span in meters
-
-% Integration grid (y_i), from -s to s
-y = linspace(-s, s, N)';  % Column vector
-% Evaluation grid (y_n), offset from y_i to avoid overlap
-
-% Adjust for the sweep angle by modifying the effective chord lengths
-for i = 1:length(y)
-    cn(i) = mywing.c_at_y(abs(y(i)));
-    Lambda(i) = mywing.Lambdax_c(0.5,abs(y(i)));
-end
-
-% Display or use the chord distribution as needed
-alpha = deg2rad(6);   % Angle of attack in radians
-U_inf = myAirCondition.V;          % Freestream velocity in m/s (typical cruise speed)
-rho = myAirCondition.rho;          % Air density in kg/m^3
-converr = 1e-5;       % Convergence criteria
-
-% Step 3: Initial guess for elliptical circulation distribution
-Gamma_old = zeros(N,1); % Initialize Gamma_old to zeros
-for i = 1:N
-    if abs(y(i)) <= b/2
-        Gamma_old(i) = sqrt(1 - (2*y(i)/b)^2); % Assign elliptical lift distribution
-    else
-        Gamma_old(i) = 0; % Set to zero outside the span
-    end
-end
-Gamma_old = Gamma_old*800;
-figure(2)
-clf;
-plot(y,Gamma_old)
-hold on
-plot(y, gradient(Gamma_old,y))
-% Step 4 to 8: Iterative convergence loop
-converged = false;
-iteration = 0; % Counter to keep track of iteration
-while converged == false
-    iteration = iteration + 1;
+function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
+    global Damping tolerance bodyDiameter
+    s = mywing.s;
+    k = mywing.N;
+    S_ref = mywing.SREF;
+    c_avg = mywing.cbar;
+    y = mywing.stripy; % Center of strips, the variable of integration
+    dy = (2 * mywing.s) / mywing.N;       % Step size for y
+    c_values = mywing.cn;
+    AR = mywing.AR;
     
-    % Compute the derivative of Gamma with respect to y
-    dGamma_dy = gradient(Gamma_old, y);  % Result is (Ny x 1)
-    dGamma_dy = dGamma_dy(:);  % Converts dGamma_dy to a column vector (N x 1)
-    % Integrate to find alpha induced(y)
-    % Define a small exclusion distance epsilon
-    epsilon = 2.22e-16; % Adjust this value based on the scale of y and the accuracy required
-    for i = 1:length(y)
-        % Define the integrand, excluding values where |y(i) - y| < epsilon
-        integrand = dGamma_dy ./ (y(i) - y);
+    U_inf = myAirCondition.V;
+    M = myAirCondition.M;
+    
+    a0 = myairfoil.a0;
+    b = myairfoil.b;
+    
+    % Initial guess
+    Gamma = 0.1 * ones(1, k); % Initial guess for circulation distribution
+    % Set boundary condition
+    Gamma(1) = 0; % circulation at the wing tip (y = -s) is zero
+    Gamma(k) = 0; % circulation at the wing tip (y = s) is zero
+    %No lift at fuselage
+    %indices = (y >= -bodyDiameter/2) & (y <= bodyDiameter/2);
+    %Gamma(indices) = 0;
+
+    alpha_i = zeros(1, k);   % Initial guess for induced angle of attack
+    %alpha_i_uncorrected = alpha_i;   % Initial guess for induced angle of attack
+    
+    
+    % Iterative solver for the circulation distribution
+    %tolerance = 1e-4; % Convergence tolerance
+    error = inf;       % Pre-define error
+    iteration = 0;     % Number of iteration
+    while error > tolerance %|| error_uncorrected > tolerance
+        Gamma_old = Gamma; % Define guessed circulation
+        %Gamma_old_uncorrected = Gamma_uncorrected; 
+        % Compute induced angle of attack (alpha_i) at each station
+    
+        for n = 1 : k
+            Lambdai = mywing.Lambdax_c(0.25, y(n));
+            integral = 0; % Pre-define integral
+            %integral_uncorrected = 0;
+            for j = 1 : k
+                if j ~= n
+                    % Compute dGamma/dy using central differencing scheme
+                    if j == 1
+                        dGammady = (Gamma(j + 1) - Gamma(j)) / dy;
+                        %dGammady_uncorrected = (Gamma_uncorrected(j + 1) - Gamma_uncorrected(j)) / dy;
+                    elseif j == k
+                        dGammady = (Gamma(j) - Gamma(j - 1)) / dy;
+                        %dGammady_uncorrected = (Gamma_uncorrected(j) - Gamma_uncorrected(j - 1)) / dy;
+                    else
+                        dGammady = (Gamma(j + 1) - Gamma(j - 1)) / (2 * dy);
+                        %dGammady_uncorrected = (Gamma_uncorrected(j + 1) - Gamma_uncorrected(j - 1)) / (2 * dy);
+                    end
+                    
+                    % Handle singularity by averaging adjacent sections
+    
+                    if abs(y(n) - y(j)) < 1e-6
+                        if j == 1
+                            integral = integral + dGammady / ((y(n) - y(j + 1)) / 2);
+                            %integral_uncorrected = integral_uncorrected + dGammady_uncorrected / ((y(n) - y(j + 1)) / 2);
+                        elseif j == k
+                            integral = integral + dGammady / ((y(n) - y(j - 1)) / 2);
+                            %integral_uncorrected = integral_uncorrected + dGammady_uncorrected / ((y(n) - y(j - 1)) / 2);
+                        else
+                            integral = integral + dGammady / ((y(n) - y(j - 1)) / 2 + (y(n) - y(j + 1)) / 2);
+                            %integral_uncorrected = integra_uncorrectedl + dGammady_uncorrected / ((y(n) - y(j - 1)) / 2 + (y(n) - y(j + 1)) / 2);
+    
+                        end
+    
+                    else
+                        integral = integral + dGammady / (y(n) - y(j));
+                        %integral_uncorrected = integral_uncorrected + dGammady_uncorrected / (y(n) - y(j));
+                    end
+    
+                end
+                
+            end
+    
+            %alpha_i_uncorrected(n) = (1 / (4 * pi * U_inf)) * dy * integral_uncorrected;
+            alpha_i(n) = (1 / (4 * pi * U_inf * cos(Lambdai))) * dy * integral;
+        end
         
-        % Apply the exclusion condition
-        mask = abs(y - y(i)) > epsilon;
-        integrand(~mask) = 0; % Set the integrand to zero where |y(i) - y| < epsilon
+        % Calculate effective angle of attack
+        alpha_e = mywing.twistfun(y) - alpha_i;
+        %alpha_e_uncorrected = mywing.twistfun(y) - alpha_i_uncorrected;
+        % Update circulation distribution using sectional lift coefficient
+        for n = 1:k
+            Lambdai = mywing.Lambdax_c(0.25, y(n));
+            c_n = mywing.cn(n);
+            acomp = a0*cos(Lambdai) / (sqrt(1 - M^2 * cos(Lambdai)^2 + (a0*cos(Lambdai)/(pi*AR))^2) + a0*cos(Lambdai)/(pi*AR));
+            acomp = real(acomp);
+            %CL_n_uncorrected = a0 * alpha_e_uncorrected(n) + b;
+            %STall is considered
+            if (alpha_e(n) > myairfoil.alphaSPos) || (alpha_e(n) < myairfoil.alphaSNeg)
+                CL_n(n) = 0;
+            else
+                CL_n(n) = acomp * alpha_e(n) + b;
+            end
+                
+            %Gamma_uncorrected(n) = 0.5 * U_inf * c_n * CL_n_uncorrected;
+            Gamma(n) =  0.5 * U_inf * cos(Lambdai) * c_n * CL_n(n);
+        end
         
-        % Perform the integration with trapz on the masked integrand
-        alpha_induced(i) = 1 / (4 * pi * U_inf) * trapz(y(mask), integrand(mask));
+        % Apply boundary conditions again
+        Gamma(1) = 0; % Circulation at the wing tip (y = -s) is zero
+        Gamma(k) = 0; % Circulation at the wing tip (y = s) is zero
+        %Gamma_uncorrected(1) = 0; % Circulation at the wing tip (y = -s) is zero
+        %Gamma_uncorrected(k) = 0; % Circulation at the wing tip (y = s) is zero
+        
+        % Damping iteration
+        Gamma = Gamma_old + Damping * (Gamma - Gamma_old);
+        %Gamma_uncorrected = Gamma_old_uncorrected + Damping * (Gamma_uncorrected - Gamma_old_uncorrected);
+       
+        % Calculate error for convergence
+        %error_uncorrected = max(abs(Gamma_uncorrected - Gamma_old_uncorrected));
+        error = max(abs(Gamma - Gamma_old));
+        iteration = iteration + 1; 
+        disp(["error = ", error])
     end
     
-    %figure(2)
-    %clf;
-    %plot(y,alpha_induced)
-    alphae = alpha - alpha_induced;
-    for i = 1:length(alphae)
-        CLp(i) = myairfoil.interpPolar(alphae(i));
-    end
-    Gamma = 1/2*U_inf.*cn'.*CLp'.*Lambda';
-    %Gamma = 1/2*U_inf.*cn'.*CLp';
-
-    figure(3)
+    indices = (y >= -bodyDiameter/2) & (y <= bodyDiameter/2);
+    CL_n(indices) = 0;
+    
+    % Calculate results using Simpson's rule
+    CL = (2 / (U_inf * S_ref)) * (dy / 3) * (Gamma(1) + ...
+        4 * sum(Gamma(2 : 2 : end - 1)) + 2 * sum(Gamma(3 : 2 : end - 2)) + Gamma(end));
+    %CL_uncorrected = (2 / (U_inf * S_ref)) * (dy / 3) * (Gamma_uncorrected(1) + ...
+        %4 * sum(Gamma_uncorrected(2 : 2 : end - 1)) + 2 * sum(Gamma_uncorrected(3 : 2 : end - 2)) + Gamma_uncorrected(end));
+    CDi = (2 / (U_inf * S_ref)) * (dy / 3) * (Gamma(1) * alpha_i(1) + ...
+        4 * sum(Gamma(2 : 2 : end - 1) .* alpha_i(2 : 2 : end - 1)) + ...
+        2 * sum(Gamma(3 : 2 : end - 2) .* alpha_i(3 : 2 : end - 2)) + Gamma(end) * alpha_i(end));
+    
+    %Cldistribution_uncorrected = Gamma_uncorrected./(1/2*mywing.SREF*myAirCondition.V);
+    %disp([size(CL_n)])
+    CLy = [y; CL_n]; %2xN
+    figure(5)
     clf;
-    plot(y,Gamma)
-    hold on
-    plot(y,Gamma_old)
-    
-
-    % Step 9: Check convergence
-    diff = abs(Gamma_old - Gamma) ./ (abs(Gamma) ); 
-    max_diff = max(diff); % Maximum relative difference for convergence check
-    %fprintf('Iteration %d: Max relative difference = %.20f\n', iteration, max_diff);
-    
-    if max_diff < converr
-        converged = true;
-        disp('Process is complete! Converged circulation distribution found.');
-        break;
-    end
-
-    if iteration > 100000
-        break;
-    end
-
-    Gamma_old = Gamma_old + Damping * (Gamma - Gamma_old);
+    plot(y,CL_n)
+    xlabel("y")
+    ylabel("Cl")
 end
-CL = 2/(U_inf * mywing.SREF) * trapz(y,Gamma);
-CDi = 2/(U_inf * mywing.SREF) * trapz(y,Gamma.*alpha_induced);
-
-
-figure(5)
-clf;
-plot(y,rho*U_inf*Gamma_old)
-xlabel("y")
-ylabel("Lift")
