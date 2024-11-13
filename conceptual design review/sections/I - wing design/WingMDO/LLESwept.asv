@@ -118,7 +118,7 @@ function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
         %error_uncorrected = max(abs(Gamma_uncorrected - Gamma_old_uncorrected));
         error = max(abs(Gamma - Gamma_old));
         iteration = iteration + 1; 
-        %disp(["error = ", error])
+        disp(["error = ", error])
         figure(3)
         clf;
         plot(y,Gamma)
@@ -127,8 +127,9 @@ function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
     end
     
     indices = (y >= -bodyDiameter/2) & (y <= bodyDiameter/2);
-    %CL_n(indices) = 0;
-    
+    CL_n(indices) = 0;
+    CL_n(1) = 0;
+    CL_n
     
     % Calculate results using Simpson's rule
     CL = (2 / (U_inf * S_ref)) * (dy / 3) * (Gamma(1) + ...
@@ -141,15 +142,10 @@ function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
     
     %Cldistribution_uncorrected = Gamma_uncorrected./(1/2*mywing.SREF*myAirCondition.V);
     %disp([size(CL_n)])
-    for i = 1:length(y)
-        localChord(i) = mywing.c_at_y(y(i));
-    end
-    CL_n(1) = CL_n(2)*localChord(1)/localChord(2);
-    CL_n(k) = CL_n(1);
-    CLy = [y; CL_n.*localChord./mywing.cbar]; %2xN
+    CLy = [y; CL_n]; %2xN
     figure(5)
     clf;
-    plot(y,CL_n.*localChord./mywing.cbar)
+    plot(y,CL_n)
     xlabel("y")
     ylabel("Cl")
 end

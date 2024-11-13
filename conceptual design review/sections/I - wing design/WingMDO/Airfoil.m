@@ -3,6 +3,7 @@ classdef Airfoil
         alpha          % angle of attack original, an array
         Cl             % Cl polar original, an array
         Cd             % Cd polar original, an array
+        Cm               % Cm polar original, an array
         uppershape        % coordinate of shape, original
         lowershape        % coordinate of shape, original
         upperShapefun  % polyfit of upper surface shape
@@ -23,6 +24,7 @@ classdef Airfoil
             obj.Cl = tab.Cl;
             obj.alpha = tab.Alpha.*pi/180;
             obj.Cd = tab.Cd;
+            obj.Cm = tab.Cm;
              % Define the range in radians
             alpha_min_deg = -7;  % Minimum angle in degrees
             alpha_max_deg = 7;   % Maximum angle in degrees
@@ -189,6 +191,16 @@ classdef Airfoil
             hold on
             plot(obj.x_c, obj.lowerShapefun(obj.x_c),"--")
             axis equal
+        end
+
+        function L_Ddes = L_DatCL(obj,CLdes)
+            if CLdes > min(obj.Cl) && CLdes < max(obj.Cl)
+                alphades = (CLdes - obj.b)/obj.a0;
+                CDdes = interp1(obj.alpha, obj.Cd, alphades);
+                L_Ddes = CLdes / CDdes;
+            else
+                error("Input CL out of range")
+            end
         end
     end
 end
