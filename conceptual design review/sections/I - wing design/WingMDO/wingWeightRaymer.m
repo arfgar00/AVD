@@ -8,5 +8,7 @@ function Ww = wingWeightRaymer(mywing,myairfoil,Wto,nult,Scswin,Scswout)
     lambdaout = mywing.ct/mywing.ck;
     %Wwin = Wwing(Wto,Nult,mywing.Sin,ARin,lambdain,Scswin,mywing.Lambdain50,myairfoil.t_c);
     %Wwout = Wwing(Wto,Nult,mywing.Sout,ARout,lambdaout,Scswout,mywing.Lambdaout50,myairfoil.t_c);
-    Ww = Wwing(Wto,nult,mywing.SREF,mywing.AR,mywing.ct/mywing.cr,Scswin + Scswout,mywing.Lambdaout50,myairfoil.t_c);
+    Wto = convmass(Wto/9.81, "kg", "lbm");
+    Ww = Wwing(Wto,nult,mywing.SREF*10.7639,mywing.AR,mywing.ct/mywing.cr,(Scswin + Scswout)*10.7639,mywing.Lambdaout50,myairfoil.t_c);
+    Ww = convmass(Ww, "lbm", "kg")*9.81;
 end
