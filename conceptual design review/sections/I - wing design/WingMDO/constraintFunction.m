@@ -1,5 +1,5 @@
 function [c, ceq] = constraintFunction(x)
-    global bdes Srefdes
+    global bdes W_Sdes Wto
     % Existing constraints
     optIdx = wingMDO(x);
     c = [-optIdx];  % Ensures optIdx >= 0
@@ -11,9 +11,6 @@ function [c, ceq] = constraintFunction(x)
     s = bdes/2;
     yk = x(6);
    
-    % Desired wing area
-    S_desired = Srefdes;  % Replace with your target wing area value
-    
     % Calculate the wing area
     wing = WingGeometry();
     wing.cr = cr;
@@ -24,18 +21,22 @@ function [c, ceq] = constraintFunction(x)
     wing.Lambdaout50 = x(5);
     wing.yk = yk;
     wing = wing.calcSref();
-    area = wing.SREF;
+    Sref = wing.SREF;
 
+    W_S = Wto / Sref;
+    
     % Inequality constraints (c <= 0)
     c = [
         c;                % Existing constraints
         ck - cr;          % Ensures ck <= cr
         ct - ck;          % Ensures ct <= ck
         yk - s;            % Ensures yk <= s
+        W_S - W_Sdes
     ];
     
     
     %ceq = [];
     % Equality constraint (area == S_desired)
-    ceq = area - S_desired;
+    %ceq = Sref - S_desired;
+    ceq = [];
 end

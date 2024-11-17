@@ -43,9 +43,8 @@ W_21 = W_C;
 
 % 2-3 % Cruise for an air distance of 7500 nmi at Mach 0.83
 R_32 = convlength(7500, 'naut mi','m'); % Range (m)
-h_32 = convlength(h_cruise1, 'ft','m'); % Cruise altitude (m)
-[T_32, c_32, P_32, rho_32] = atmosisa(h_32);
-V_32 = V_cruise1 * c_32;                % Velocity (m/s)
+h_32 = h_cruise1; % Cruise altitude (m)
+V_32 = cruise1.V;                % Velocity (m/s)
 LD_32 = LD_cruise;                      % Optimal cruise L/D ratio
 W_32 = exp((-R_32 .* C_cruise) ./ (V_32 .* LD_32));
 
@@ -61,15 +60,15 @@ W_54 = 1 - (h_cruise2 / h_cruise1) * (1 - W_C);
 % Assume cruise indicate velocity 280 knots [5]
 %
 R_65 = convlength(370, 'km', 'm');  % Range (m)
-h_65 = convlength(18000, 'ft','m'); % Alternate altitude (m)
-[T_65, c_65, P_65, rho_65] = atmosisa(h_65);
-V_65 = V_cruise2 .* c_65;           % Velocity (m/s)
+h_65 = h_cruise2; % Alternate altitude (m)
+%[T_65, c_65, P_65, rho_65] = atmosisa(h_65);
+V_65 = cruise2.V;           % Velocity (m/s)
 LD_65 = LD_alternate;               % Estimate alternate L/D ratio
 W_65 = exp((-R_65 .* C_alternate) ./ (V_65 .* LD_65));
 
 % 6-7 % Loiter at 5000 ft for 45 minutes
 E_76 = 45 * 60; % Endurance (s)
-LD_76 = LD_cruise2/0.866; % Optimal loiter L/D ratio
+LD_76 = LD_cruise1/0.866; % Optimal loiter L/D ratio
 W_76 = exp((-E_76 .* C_loiter) ./ LD_76);
 
 % 7-8 % Descent to land

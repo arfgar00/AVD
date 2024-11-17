@@ -1,4 +1,4 @@
-function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
+function [CL, CDi, CLy, CDprofile] = LLESwept(mywing, myairfoil, myAirCondition)
     global Damping tolerance bodyDiameter
     s = mywing.s;
     k = mywing.N;
@@ -124,10 +124,13 @@ function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
         plot(y,Gamma)
         hold on
         plot(y,Gamma_old)
+        xlabel("y")
+        ylabel("Gamma")
+        legend("Gamma","Gamma_old")
     end
     
     indices = (y >= -bodyDiameter/2) & (y <= bodyDiameter/2);
-    %CL_n(indices) = 0;
+    CL_n(indices) = 0;
     
     
     % Calculate results using Simpson's rule
@@ -138,7 +141,10 @@ function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
     CDi = (2 / (U_inf * S_ref)) * (dy / 3) * (Gamma(1) * alpha_i(1) + ...
         4 * sum(Gamma(2 : 2 : end - 1) .* alpha_i(2 : 2 : end - 1)) + ...
         2 * sum(Gamma(3 : 2 : end - 2) .* alpha_i(3 : 2 : end - 2)) + Gamma(end) * alpha_i(end));
-    
+    CDprofile = 0;
+    for i = 1:length(y)
+        CDprofile = CDprofile + interp1(myairfoil.alpha,myairfoil.Cd,alpha_e(i)).*mywing.Sc(i)./mywing.SREF;
+    end
     %Cldistribution_uncorrected = Gamma_uncorrected./(1/2*mywing.SREF*myAirCondition.V);
     %disp([size(CL_n)])
     for i = 1:length(y)
