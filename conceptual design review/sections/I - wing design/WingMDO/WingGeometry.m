@@ -33,7 +33,7 @@ classdef WingGeometry
              obj.Sin = 2*(obj.cr + obj.ck)*obj.yk/2;
              obj.Sout = 2*(obj.ck + obj.ct)*(obj.s - obj.yk)/2;
              obj.cbar = ((obj.ck + obj.cr)/2 + (obj.ck + obj.ct)/2)/2;
-             obj.twistfun = @(y) obj.twist_max./obj.s.*abs(y);
+             obj.twistfun = @(y) obj.twist_max - obj.twist_max./obj.s.*abs(y);
         end
         % Get sweep angle at coordinate (x_c,y)
          function Lambda = Lambdax_c(obj,x_c,y)
@@ -70,45 +70,51 @@ classdef WingGeometry
             end
         end
         % Plot Wing, with x_cm shown
-        function plotWing(obj)
+        function plotWing(obj, color)
             % Plot the original wing (top half)
-            plot([0 obj.cr], [0 0], "b")
+            if nargin < 2
+                color = 'b'; % Default color is blue
+            end
+            
+            % Plot root chord line
+            plot([0 obj.cr], [0 0], color)
             hold on
         
+            % Compute key points for the top half
             xk0 = obj.yk * tan(obj.Lambdax_c(0, 0));
             xk1 = obj.cr + obj.yk * tan(obj.Lambdax_c(1, 0));
         
             xt0 = xk0 + (obj.s - obj.yk) * tan(obj.Lambdax_c(0, obj.s));
             xt1 = xk1 + (obj.s - obj.yk) * tan(obj.Lambdax_c(1, obj.s));
         
-            plot([0 xk0], [0 obj.yk], "b")
-            plot([obj.cr xk1], [0 obj.yk], "b")
-            plot([xk0 xk1], [obj.yk obj.yk], "b")
-            
-            plot([xk0 xt0], [obj.yk obj.s], "b")
-            plot([xk1 xt1], [obj.yk obj.s], "b")
-            plot([xt0 xt1], [obj.s obj.s], "b")
+            % Plot edges of the top half
+            plot([0 xk0], [0 obj.yk], color)
+            plot([obj.cr xk1], [0 obj.yk], color)
+            plot([xk0 xk1], [obj.yk obj.yk], color)
+            plot([xk0 xt0], [obj.yk obj.s], color)
+            plot([xk1 xt1], [obj.yk obj.s], color)
+            plot([xt0 xt1], [obj.s obj.s], color)
         
             % Plot mid-line sweep angle for top half
             xk5 = 0.5 * obj.cr + obj.yk * tan(obj.Lambdax_c(0.5, 0));
             xt5 = xk5 + (obj.s - obj.yk) * tan(obj.Lambdax_c(0.5, obj.s));
-            plot([0.5 * obj.cr xk5], [0 obj.yk], "--b")
-            plot([xk5 xt5], [obj.yk obj.s], "--b")
+            plot([0.5 * obj.cr xk5], [0 obj.yk], "--", 'Color', color)
+            plot([xk5 xt5], [obj.yk obj.s], "--", 'Color', color)
         
             % Mirror the wing about the x-axis (bottom half)
-            plot([0 obj.cr], [0 0], "b")
+            plot([0 obj.cr], [0 0], color)
         
-            plot([0 xk0], [0 -obj.yk], "b")
-            plot([obj.cr xk1], [0 -obj.yk], "b")
-            plot([xk0 xk1], [-obj.yk -obj.yk], "b")
-            
-            plot([xk0 xt0], [-obj.yk -obj.s], "b")
-            plot([xk1 xt1], [-obj.yk -obj.s], "b")
-            plot([xt0 xt1], [-obj.s -obj.s], "b")
+            % Plot edges of the bottom half
+            plot([0 xk0], [0 -obj.yk], color)
+            plot([obj.cr xk1], [0 -obj.yk], color)
+            plot([xk0 xk1], [-obj.yk -obj.yk], color)
+            plot([xk0 xt0], [-obj.yk -obj.s], color)
+            plot([xk1 xt1], [-obj.yk -obj.s], color)
+            plot([xt0 xt1], [-obj.s -obj.s], color)
         
             % Plot mid-line sweep angle for bottom half
-            plot([0.5 * obj.cr xk5], [0 -obj.yk], "--b")
-            plot([xk5 xt5], [-obj.yk -obj.s], "--b")
+            plot([0.5 * obj.cr xk5], [0 -obj.yk], "--", 'Color', color)
+            plot([xk5 xt5], [-obj.yk -obj.s], "--", 'Color', color)
         
             % Finalize the plot
             xlabel('X-axis');
@@ -117,6 +123,7 @@ classdef WingGeometry
             axis equal;
             hold off;
         end
+
 
         % Create strips on the wing
         function obj =  createStrips(obj)
