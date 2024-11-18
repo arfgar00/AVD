@@ -127,7 +127,7 @@ function [CL, CDi, CLy] = LLESwept(mywing, myairfoil, myAirCondition)
     end
     
     indices = (y >= -bodyDiameter/2) & (y <= bodyDiameter/2);
-    %CL_n(indices) = 0;
+    CL_n(indices) = 0;
     
     
     % Calculate results using Simpson's rule
