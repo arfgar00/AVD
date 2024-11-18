@@ -1,11 +1,10 @@
-function wing = x2wing(x)
-    global bdes
+function wing = x2wing(x, bdes)
     wing = WingGeometry();
     wing.cr = x(1);
     wing.ck = x(2);
     wing.ct = x(3);
     wing.s = bdes/2;
-    wing.N = 501;
+    wing.N = 301;
     wing.Lambdain50 = x(4);
     wing.Lambdaout50 = x(5);
     wing.yk = x(6);
