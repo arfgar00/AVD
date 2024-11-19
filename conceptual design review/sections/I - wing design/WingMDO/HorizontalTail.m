@@ -10,7 +10,6 @@ classdef HorizontalTail
         CL_alphaH                          % Horizontal lift curve slope (C_Lα) in unitless 
         epsilon                            % Downwash angle (ε) in rad
         alphaH_eff                         % Effective angle of attack of the tailplane (αh) in degrees
-        CLH_c                              % Horizontal tail lift coefficient at cruise (CLH_c)
     end
 
     properties (SetAccess = public)
@@ -42,6 +41,9 @@ classdef HorizontalTail
         dihedralAngle_Gamma_ht = 1;        % Dihedral angle (Γ_ht) in degrees
         taperRatio_lambdah = 1;            % Taper ratio (λ_h)
         AR_h = 1;                          % Aspect ratio (AR_h)
+        CLH_c = 1;                         % Actual horizontal tail lift coefficient at cruise (CLH_c)
+        
+
 
         % Misc
         KC = 1;                            % Correction Factor (K_C) in unitless 
@@ -53,7 +55,8 @@ classdef HorizontalTail
         % Use the formula from Equation 6.47
         function val = get.L_ht(obj)
             % Equation: L_ht = K_C * sqrt( (4 * C_bar * S_w * V_barH) / (pi * D_f) )
-            val = obj.KC * sqrt(4 * obj.C_bar * obj.S_w * obj.horizontalTailVolumeCoefficient / (pi * obj.Df));
+            % val = obj.KC * sqrt(4 * obj.C_bar * obj.S_w * obj.horizontalTailVolumeCoefficient / (pi * obj.Df));
+            val = 30;
         end
         
         % Step 5: Horizontal tail planform area (S_ht)
@@ -70,13 +73,14 @@ classdef HorizontalTail
             val = obj.CM_af * (obj.AR_w * cos(deg2rad(obj.L_w))^2) / (obj.AR_w + 2 * cos(deg2rad(obj.L_w))) + 0.01 * obj.twist_w;
         end
         
-        % Step 7: Cruise lift coefficient (CL_c)
-        % Use equation 6.27 to calculate the cruise lift coefficient.
+        % % Step 7: Cruise lift coefficient (CL_c)
+        % % Use equation 6.27 to calculate the cruise lift coefficient.
         function val = get.CL_c(obj)
             % Equation: CL_c = (2 * W_avg) / (rho * V_C^2 * S_w)
             val = (2 * obj.W_avg) / (obj.rho * obj.V_C^2 * obj.S_w);
         end
-        
+         
+
         % Step 8: Desired horizontal tail lift coefficient at cruise (CL_h)
         % Use equation 6.29 to calculate the desired lift coefficient for the horizontal tail during cruise via wing properties.
         function val = get.CL_h(obj)
@@ -155,11 +159,11 @@ classdef HorizontalTail
             disp(val.meanAerodynamicChord_ht)
         end
 
-        % Step 17: Generated lift coefficient at cruise (CLH_c)
-        function val = get.CLH_c(~)
-            % Placeholder value for the generated horizontal tail lift coefficient at cruise
-            val = 2; % Placeholder value
-        end
+        % % Step 17: Generated lift coefficient at cruise (CLH_c)
+        % function val = get.CLH_c(~)
+        %     % Placeholder value for the generated horizontal tail lift coefficient at cruise
+        %     val = 2; % Placeholder value
+        % end
         
         % Testing: Lift and stability checks:
         function resultLift = checkConditionLift(obj)
@@ -227,3 +231,15 @@ classdef HorizontalTail
         % needed necessarily
     end
 end
+
+
+% to do list - evaluate exactly what is meant by trim using raymer such
+% that when we receive the list from jerry, we should be good to go
+
+% add in aerofoils for the horizontal tailplane and compare different types
+
+% add in the function to produce the graphs as in raymer to find what angle
+% of incidence is needed to produce our trimmed flight
+
+% add in some type of method to check for the qualitative conditions needed
+% for a good horizontal tailplane

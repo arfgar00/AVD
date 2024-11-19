@@ -1,5 +1,4 @@
-function [CL, CDi, CLy, CDprofile] = LLESwept(mywing, myairfoil, myAirCondition)
-    global Damping tolerance bodyDiameter
+function [CL, CDi, CLy, CDprofile] = LLESwept(mywing, myairfoil, myAirCondition,Damping, tolerance, bodyDiameter)
     s = mywing.s;
     k = mywing.N;
     S_ref = mywing.SREF;
@@ -119,19 +118,19 @@ function [CL, CDi, CLy, CDprofile] = LLESwept(mywing, myairfoil, myAirCondition)
         error = max(abs(Gamma - Gamma_old));
         iteration = iteration + 1; 
         %disp(["error = ", error])
-        figure(3)
-        clf;
-        plot(y,Gamma)
-        hold on
-        plot(y,Gamma_old)
-        xlabel("y")
-        ylabel("Gamma")
-        legend("Gamma","Gamma_old")
+        % figure(3)
+        % clf;
+        % plot(y,Gamma)
+        % hold on
+        % plot(y,Gamma_old)
+        % xlabel("y")
+        % ylabel("Gamma")
+        % legend("Gamma","Gamma_old")
     end
     
     indices = (y >= -bodyDiameter/2) & (y <= bodyDiameter/2);
-    CL_n(indices) = 0;
     Gamma(indices) = 0;
+    CL_n(indices) = 0;
     
     % Calculate results using Simpson's rule
     CL = (2 / (U_inf * S_ref)) * (dy / 3) * (Gamma(1) + ...
@@ -152,8 +151,8 @@ function [CL, CDi, CLy, CDprofile] = LLESwept(mywing, myairfoil, myAirCondition)
     for i = 1:length(y)
         localChord(i) = mywing.c_at_y(y(i));
     end
-    CL_n(1) = CL_n(2)*localChord(1)/localChord(2);
-    CL_n(k) = CL_n(1);
+    CL_n(1) = 0;
+    CL_n(k) = 0;
     CLy = [y; CL_n.*localChord./mywing.cbar]; %2xN
     figure(5)
     clf;
