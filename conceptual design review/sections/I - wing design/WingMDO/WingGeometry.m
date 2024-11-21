@@ -119,7 +119,6 @@ classdef WingGeometry
             % Finalize the plot
             xlabel('X-axis');
             ylabel('Y-axis');
-            title('Full Wing Plot (Mirrored about X-axis)');
             axis equal;
             hold off;
         end
@@ -147,6 +146,17 @@ classdef WingGeometry
                 x = xk0 + (y - obj.yk)*tan(obj.Lambdax_c(0,obj.s));
             end
         end
+        % Given y, find coordinate of x on leading edge
+        function x = TEx(obj,y)
+            y = abs(y);
+            xk0 = obj.yk*tan(obj.Lambdax_c(0,0));
+            if y <= obj.yk
+                x = y*tan(obj.Lambdax_c(0,0)) + obj.c_at_y(y);
+            elseif y > obj.yk && y <= obj.s
+                x = xk0 + (y - obj.yk)*tan(obj.Lambdax_c(0,obj.s)) + obj.c_at_y(y);
+            end
+        end
+
         % Plot strips on the wing
         function plotStrips(obj)
             for i = 1:length(obj.stripy)
@@ -163,20 +173,55 @@ classdef WingGeometry
                 hold on
             end
         end
+
+        function plotStallOnStrips(obj, stallylist)
+            for i = 1:length(obj.stripy)
+                y = obj.stripy(i);
+                stallFlag = stallylist(i);
+                
+                % Plot the main strip line
+                %plot([obj.LEx(y) obj.LEx(y) + obj.c_at_y(y)], [y y], "--m");
+                hold on;
+                
+                % Plot the lines above and below the current strip
+                y_minus_dY = max(-obj.s, y - obj.dY); % Ensure y within semi span
+                %plot([obj.LEx(y_minus_dY) obj.LEx(y_minus_dY) + obj.c_at_y(y_minus_dY)], [y_minus_dY, y_minus_dY], "m");
+                hold on;
+        
+                y_plus_dY = min(obj.s, y + obj.dY); % Ensure y within semi span
+                %plot([obj.LEx(y_plus_dY) obj.LEx(y_plus_dY) + obj.c_at_y(y_plus_dY)], [y_plus_dY, y_plus_dY], "m");
+                hold on;
+        
+                % Paint the region red if stallFlag is 1
+                if stallFlag == 1
+                    % Define coordinates of the filled region
+                    xCoords = [obj.LEx(y_minus_dY), obj.LEx(y_minus_dY) + obj.c_at_y(y_minus_dY), ...
+                               obj.LEx(y_plus_dY) + obj.c_at_y(y_plus_dY), obj.LEx(y_plus_dY)];
+                    yCoords = [y_minus_dY, y_minus_dY, y_plus_dY, y_plus_dY];
+        
+                    % Fill the region with red
+                    fill(xCoords, yCoords, 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+                end
+            end
+        end
+
         %Calculate area of each strip
         function obj = calcSc(obj)
             for i = 1:length(obj.stripy)
-                c1 = obj.c_at_y(min(obj.stripy(i) + obj.dY, obj.s));
-                c2 = obj.c_at_y(max(-obj.s, obj.stripy(i)-obj.dY));
+                y = abs(obj.stripy(i));
+                y1 = y + obj.dY;
+                y2 = y - obj.dY;
+                c1 = obj.c_at_y(min(y1, obj.s));
+                c2 = obj.c_at_y(min(y2, obj.s));
                 
                 %Handle boundary
                 if i == 1
                     obj.Sc(i) = (c1 + obj.ct)*obj.dY/2;
                 elseif i == length(obj.stripy)
                     obj.Sc(i) = (obj.ct + c2)*obj.dY/2;
-                elseif  c1 > obj.yk && c2 < obj.yk %Handle kink
-                    A1 = (c1 + obj.yk)*(c1 - obj.yk)/2;
-                    A2 = (c2 + obj.yk)*(obj.yk - c2)/2;
+                elseif  y1 > obj.yk && y2 < obj.yk %Handle kink
+                    A1 = (c1 + obj.ck)*(y1 - obj.yk)/2;
+                    A2 = (c2 + obj.ck)*(obj.yk - y2)/2;
                     obj.Sc(i) = A1 + A2;
                 else
                     obj.Sc(i) = (c1 + c2)*2*obj.dY/2;
@@ -199,6 +244,15 @@ classdef WingGeometry
                    error('f:Invalid_Y', 'Input y = %f is outside the wing semi-span [0, %f]', y, obj.s);
                 end
             end
-       end
+        end
+
+        function obj = modRootShape(obj)
+            Lambda = atan((obj.cr - obj.ck + obj.ck/2 - obj.cr/2)/obj.yk);
+            obj.Lambdain50 = Lambda;
+        end
+
+        function Lambda = returnModedLambda(obj)
+            Lambda = atan((obj.cr - obj.ck + obj.ck/2 - obj.cr/2)/obj.yk);
+        end
    end
 end

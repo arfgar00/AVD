@@ -28,7 +28,7 @@ bodyDiameter = 6.38;
 Wto0 = 4.2188*1e5*9.81;
 Wpayload = 8.7176e3*9.81;
 Swet_SrefWing = 2.2;
-bodyLength = 80;
+bodyLength = 72;
 %Swet_SrefBody = pi*bodyDiameter*bodyLength*1.1/Srefdes;
 l_d = bodyLength/bodyDiameter;
 Srefdes = 548.7;
@@ -37,11 +37,11 @@ Wto = Wto0;
 nult = 3.75;
 
 % Weight of Zero Fuel without Wing
-Ww0 = 3.6456e+05; % Guessed from wing0
+Ww0 = 35220.312*9.81; % Guessed from wing0
 W_ZF_Nowing = Wto0 - Wto0 * 0.42 - Wpayload - Ww0;
 
 % Wing span
-bdes = 65;
+bdes = 64.99;
 
 % For LLE
 Damping = 0.04;

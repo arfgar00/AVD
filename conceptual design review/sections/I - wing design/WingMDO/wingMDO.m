@@ -4,20 +4,21 @@ function optIndex = wingMDO(x)
 
     %x is the array of wing geometry to be optimized
     %x = [cr ck ct Lambdain50 Lambdaout50 yk twistmax]
-    wing = WingGeometry();
-    wing.cr = x(1);
-    wing.ck = x(2);
-    wing.ct = x(3);
-    wing.s = bdes/2;
-    wing.Lambdain50 = x(4);
-    wing.Lambdaout50 = x(5);
-    wing.yk = x(6);
-    wing.twist_max = x(7);
-    wing = wing.calcSref();
-    %disp(["bdes", bdes])
-    wing.N = 301;
-    wing = wing.createStrips();
-    wing = wing.calcSc();
+    wing = x2wing(x);
+    % wing = WingGeometry();
+    % wing.cr = x(1);
+    % wing.ck = x(2);
+    % wing.ct = x(3);
+    % wing.s = bdes/2;
+    % wing.Lambdain50 = x(4);
+    % wing.Lambdaout50 = x(5);
+    % wing.yk = x(6);
+    % wing.twist_max = x(7);
+    % wing = wing.calcSref();
+    % %disp(["bdes", bdes])
+    % wing.N = 301;
+    % wing = wing.createStrips();
+    % wing = wing.calcSc();
 
     cruise1 = cruise1.init(wing.cbar);
     cruise2 = cruise2.init(wing.cbar);

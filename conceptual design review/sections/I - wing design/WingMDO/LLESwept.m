@@ -157,6 +157,11 @@ function [CL, CDi, CLy, CDprofile] = LLESwept(mywing, myairfoil, myAirCondition,
     figure(5)
     clf;
     plot(y,CL_n.*localChord./mywing.cbar)
+    hold on
+    xline(mywing.yk, '--', 'Kink', 'LabelOrientation', 'horizontal', 'LabelVerticalAlignment', 'bottom');
+    hold on
+    xline(-mywing.yk, '--', 'Kink', 'LabelOrientation', 'horizontal', 'LabelVerticalAlignment', 'bottom');
+
     xlabel("y")
     ylabel("Cl")
 end
