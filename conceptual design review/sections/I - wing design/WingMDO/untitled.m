@@ -50,15 +50,15 @@ average_twist = (1 / s) * integral(f, -s/2, s/2);
 
 
 % Wing Parameters
-horizontalTail.C_bar = wing_opt.cbar;                                                           % Mean aerodynamic chord of the wing (m)
-horizontalTail.S_w = wing_opt.SREF;                                                             % Wing reference area (m^2)
-horizontalTail.L_w = ( wing_opt.Lambdain50 + wing_opt.Lambdaout50 ) / 2;                        % Sweep angle of the wing (rad)
-horizontalTail.AR_w = wing_opt.AR;                                                              % Aspect ratio of the wing
-horizontalTail.CM_af = Cm_query;                                                                % Wing airfoil section pitching moment coefficient
-horizontalTail.twist_w = average_twist;                                                         % Wing twist (rad)
-% horizontalTail.CL_w = targetCl;                                                                 % Coefficient of lift of the wing
-horizontalTail.CL_alphaW = 5;                                                                   % Lift curve slope for the wing (1/rad)
-horizontalTail.alphaW = alpha;                                                                  % Angle of attack of the wing (rad)
+% horizontalTail.C_bar = wing_opt.cbar;                                                           % Mean aerodynamic chord of the wing (m)
+% horizontalTail.S_w = wing_opt.SREF;                                                             % Wing reference area (m^2)
+% horizontalTail.L_w = ( wing_opt.Lambdain50 + wing_opt.Lambdaout50 ) / 2;                        % Sweep angle of the wing (rad)
+% horizontalTail.AR_w = wing_opt.AR;                                                              % Aspect ratio of the wing
+% horizontalTail.CM_af = Cm_query;                                                                % Wing airfoil section pitching moment coefficient
+% horizontalTail.twist_w = average_twist;                                                         % Wing twist (rad)
+% % horizontalTail.CL_w = targetCl;                                                                 % Coefficient of lift of the wing
+% horizontalTail.CL_alphaW = 5;                                                                   % Lift curve slope for the wing (1/rad)
+% horizontalTail.alphaW = alpha;                                                                  % Angle of attack of the wing (rad)
 
 wing = WingGeometry();
 wing.cr = wing_opt.cr;
@@ -86,7 +86,8 @@ cruise.M = 0.8;
 cruise.h = convlength(39000, 'ft','m');
 cruise = cruise.init(wing_opt.cbar)
 
-AeroWing = LLESwept(wing, airfoil, cruise);                                               % [CL, CDi, CLy]
+AeroWing = LLESwept(wing, airfoil, cruise,0,1e-2,20);                                        % [CL, CDi, CLy]
+disp(['Cl is ', num2str(AeroWing(1))])
 
 
 
@@ -101,70 +102,70 @@ AeroWing = LLESwept(wing, airfoil, cruise);                                     
 % ie currently have an sc20712 so should be thinner than this
 % should also be symmetric
 
-% Initialize the Airfoil object
-tailplaneAirfoil = Airfoil;
-
-
-
-
-
-
-
-% Fuselage Parameters
-horizontalTail.Df = 6.38;                                                                       % Fuselage diameter (m), taken from latex report of diameter of fuselage
-horizontalTail.alphaF = 0;                                                                      % Angle of attack of the fuselage (rad)
-
-
-% Tailplane Parameters
-horizontalTail.KC = 1.1;                                                                        % Tailplane configuration factor, taken from book
-horizontalTail.T_ef = 0.85;                                                                     % Tailplane efficiency factor, taken from book
-horizontalTail.Cl_alphaH = 6;                                                                   % Sectional lift coefficient of tailplane airfoil -
-horizontalTail.horizontalTailVolumeCoefficient = 1.1;                                           % Horizontal Tail Volume Coefficient (unitless) -
-horizontalTail.sweepAngle_Lambda_ht = wing_opt.Lambdain50;                                                       % Sweep angle of tailplane (in degrees or radians), taken from A380
-horizontalTail.dihedralAngle_Gamma_ht = 20;                                                     % Dihedral angle of tailplane (in degrees or radians), taken from A380
-horizontalTail.taperRatio_lambdah = 0.7;                                                        % Taper ratio of tailplane (unitless)
-horizontalTail.AR_h = 7.4;                                                                      % Aspect ratio of the tailplane (unitless), taken from A380 
-horizontalTail.CL_w = AeroWing(1);
-
-% Cruise Conditions
-horizontalTail.V_C = 250;                                                                       % Cruise speed (m/s)
-horizontalTail.W_avg = 300000;                                                                  % Average weight of the aircraft during cruise (N)
-horizontalTail.rho = 1.225;                                                                     % Air density at cruise (kg/m^3)
-
-% Misc parameters
-horizontalTail.xcg_xw = 3;                                                                      % Distance between CG and wing (in meters)
-
-% Defining the tailplane characteristics such that we can define the lift
-% coefficient of the wing
-myTailplane = WingGeometry();
-myTailplane.cr = horizontalTail.TailDimensions.C_ht_root(horizontalTail.TailDimensions.C_ht_root > 0);                                                                     % Root chord (in meters) 
-myTailplane.ct = horizontalTail.TailDimensions.C_ht_tip(horizontalTail.TailDimensions.C_ht_tip > 0);                                                                   % Tip chord (in meters)
-myTailplane.ck = 0.5 * (myTailplane.cr + myTailplane.ct);                                        % Chord at mid-span (in meters)
-myTailplane.s = horizontalTail.TailDimensions.B_ht(horizontalTail.TailDimensions.B_ht > 0)/2;                                                                            % Semi-wingspan
-myTailplane.Lambdain50 = horizontalTail.sweepAngle_Lambda_ht * pi / 180;                                                          % Inboard sweep angle at 50% of the tailplane span (in radians)
-myTailplane.Lambdaout50 = horizontalTail.sweepAngle_Lambda_ht * pi / 180;                                                         % Outboard sweep angle at 50% of the tailplane span (in radians)
-myTailplane.yk = myTailplane.s/2;                                                                         % Kink position
-myTailplane.twist_max = 3 * pi()/180;
-myTailplane = myTailplane.calcSref();                                                            % Calculate wing reference area
-myTailplane.N = 31;             
-% figure(3)
-% clf;
-% axis equal
-myTailplane.plotWing()
-%myTailplane.c_at_y(9);
-myTailplane = myTailplane.createStrips();
-myTailplane.plotStrips();
-myTailplane = myTailplane.calcSc
-
-AeroHorizontal = LLESwept(myTailplane, airfoil, cruise);                                               % [CL, CDi, CLy]
-
-horizontalTail.CLH_c = AeroHorizontal(1);
-
-% Check if the horizontal tail functions are fulfilled1
-OverallResult = horizontalTail.checkOverall();
-Structure = horizontalTail.TailDimensions();
-    
-
+% % Initialize the Airfoil object
+% tailplaneAirfoil = Airfoil;
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% % Fuselage Parameters
+% horizontalTail.Df = 6.38;                                                                       % Fuselage diameter (m), taken from latex report of diameter of fuselage
+% horizontalTail.alphaF = 0;                                                                      % Angle of attack of the fuselage (rad)
+% 
+% 
+% % Tailplane Parameters
+% horizontalTail.KC = 1.1;                                                                        % Tailplane configuration factor, taken from book
+% horizontalTail.T_ef = 0.85;                                                                     % Tailplane efficiency factor, taken from book
+% horizontalTail.Cl_alphaH = 6;                                                                   % Sectional lift coefficient of tailplane airfoil -
+% horizontalTail.horizontalTailVolumeCoefficient = 1.1;                                           % Horizontal Tail Volume Coefficient (unitless) -
+% horizontalTail.sweepAngle_Lambda_ht = wing_opt.Lambdain50;                                                       % Sweep angle of tailplane (in degrees or radians), taken from A380
+% horizontalTail.dihedralAngle_Gamma_ht = 20;                                                     % Dihedral angle of tailplane (in degrees or radians), taken from A380
+% horizontalTail.taperRatio_lambdah = 0.7;                                                        % Taper ratio of tailplane (unitless)
+% horizontalTail.AR_h = 7.4;                                                                      % Aspect ratio of the tailplane (unitless), taken from A380 
+% horizontalTail.CL_w = AeroWing(1);
+% 
+% % Cruise Conditions
+% horizontalTail.V_C = 250;                                                                       % Cruise speed (m/s)
+% horizontalTail.W_avg = 300000;                                                                  % Average weight of the aircraft during cruise (N)
+% horizontalTail.rho = 1.225;                                                                     % Air density at cruise (kg/m^3)
+% 
+% % Misc parameters
+% horizontalTail.xcg_xw = 3;                                                                      % Distance between CG and wing (in meters)
+% 
+% % Defining the tailplane characteristics such that we can define the lift
+% % coefficient of the wing
+% myTailplane = WingGeometry();
+% myTailplane.cr = horizontalTail.TailDimensions.C_ht_root(horizontalTail.TailDimensions.C_ht_root > 0);                                                                     % Root chord (in meters) 
+% myTailplane.ct = horizontalTail.TailDimensions.C_ht_tip(horizontalTail.TailDimensions.C_ht_tip > 0);                                                                   % Tip chord (in meters)
+% myTailplane.ck = 0.5 * (myTailplane.cr + myTailplane.ct);                                        % Chord at mid-span (in meters)
+% myTailplane.s = horizontalTail.TailDimensions.B_ht(horizontalTail.TailDimensions.B_ht > 0)/2;                                                                            % Semi-wingspan
+% myTailplane.Lambdain50 = horizontalTail.sweepAngle_Lambda_ht * pi / 180;                                                          % Inboard sweep angle at 50% of the tailplane span (in radians)
+% myTailplane.Lambdaout50 = horizontalTail.sweepAngle_Lambda_ht * pi / 180;                                                         % Outboard sweep angle at 50% of the tailplane span (in radians)
+% myTailplane.yk = myTailplane.s/2;                                                                         % Kink position
+% myTailplane.twist_max = 3 * pi()/180;
+% myTailplane = myTailplane.calcSref();                                                            % Calculate wing reference area
+% myTailplane.N = 31;             
+% % figure(3)
+% % clf;
+% % axis equal
+% myTailplane.plotWing()
+% %myTailplane.c_at_y(9);
+% myTailplane = myTailplane.createStrips();
+% myTailplane.plotStrips();
+% myTailplane = myTailplane.calcSc
+% 
+% AeroHorizontal = LLESwept(myTailplane, airfoil, cruise);                                               % [CL, CDi, CLy]
+% 
+% horizontalTail.CLH_c = AeroHorizontal(1);
+% 
+% % Check if the horizontal tail functions are fulfilled1
+% OverallResult = horizontalTail.checkOverall();
+% Structure = horizontalTail.TailDimensions();
+% 
+% 
 
 
 
